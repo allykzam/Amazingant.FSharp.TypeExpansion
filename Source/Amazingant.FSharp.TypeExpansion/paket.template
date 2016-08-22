@@ -1,0 +1,3 @@
+type project
+include-pdbs true
+authors amazingant (Anthony Perez)

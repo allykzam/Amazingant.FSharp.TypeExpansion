@@ -1,0 +1,7 @@
+* text=auto
+
+*.fs text=auto eol=lf
+*.fsi text=auto eol=lf
+*.fsx text=auto eol=lf
+*.sln text eol=crlf
+*.config text=auto eol=crlf
