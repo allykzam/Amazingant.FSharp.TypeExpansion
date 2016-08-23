@@ -68,15 +68,16 @@ type internal StaticParameters =
         OutputPath : string;
     }
     member x.Source =
+        let exc = (CompileSource (x.ExcludeFiles, [])).FilesAndRefs |> fst
         match x.OutputMode with
         | OutputMode.CreateSourceFile ->
-            CompileSource (x.SourcePath, x.OutputPath)
+            CompileSource (x.SourcePath, x.OutputPath::exc)
         | _ ->
-            CompileSource (x.SourcePath, "")
+            CompileSource (x.SourcePath, exc)
     member x.References = splitCommas x.Refs
     member x.CompilerFlags = splitCommas x.Flags
     member x.IsValid () =
-        let missingFiles = x.Source.Files |> Seq.filter fileNotExist |> joinLines
+        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter fileNotExist |> joinLines
         // If any files are missing, throw an exception that indicates the
         // current path; this will allow the user to determine how to fix any
         // relative paths that they specified
@@ -168,8 +169,9 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         let baseArgs = [ "fsc"; "--noframework"; "--target:library"; ]
         // Library references
         let refs = buildRefs (requiredRefs @ config.References)
+        let files = config.Source.FilesAndRefs |> fst
         // Group everything together with the source files
-        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; config.Source.Files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
+        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
         let (errors,_) = SimpleSourceCodeServices.SimpleSourceCodeServices().Compile(args)
         // Throw an exception if there were errors

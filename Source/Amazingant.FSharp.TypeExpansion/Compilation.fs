@@ -122,8 +122,9 @@ module internal Compilation =
         let (errors, _, assembly) =
             try
                 let args = [ "fsc.exe"; "--noframework"; "-a"; ]
-                let refs = buildRefs (requiredRefs@refs)
-                let args = args @ refs @ source.Files |> Seq.toArray
+                let (files, extraRefs) = source.FilesAndRefs
+                let refs = buildRefs (requiredRefs @ refs @ extraRefs)
+                let args = args @ refs @ files |> Seq.toArray
                 let compiler = SimpleSourceCodeServices.SimpleSourceCodeServices()
                 compiler.CompileToDynamicAssembly(args, None)
             with
