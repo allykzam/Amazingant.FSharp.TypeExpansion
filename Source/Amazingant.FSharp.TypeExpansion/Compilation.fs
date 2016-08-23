@@ -3,8 +3,10 @@ namespace Amazingant.FSharp.TypeExpansion
 open Amazingant.FSharp.TypeExpansion.Attributes
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Xml
 open Microsoft.FSharp.Compiler
 
 
@@ -27,25 +29,47 @@ module internal Compilation =
 
 
     // Helper type for processing the user-specified source path
-    type internal CompileSource (path : string, omitFile : string) =
+    type internal CompileSource (path : string, omitFiles : string list) =
+        static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
         let (|Project|List|File|) (file : string) =
             let isProj = file.EndsWith ".fsproj"
             let isList = file.Contains ","
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitCommas file |> List.filter (fun x -> x <> omitFile))
+            | false,  true, false -> List (splitCommas file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
             | false, false,  true -> File file
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
 
-        member __.Files : string list =
+        member __.FilesAndRefs : (string list * string list) =
             match path with
-            | File x -> [x]
-            | List xs -> xs
+            | File x -> ([x], [])
+            | List xs -> (xs, [])
             | Project x ->
-                // TODO: Load XML and find source files? Exclude current file somehow?
-                [x]
+                if fileNotExist x then
+                    failwithf "Provided source path could not be found"
+                lock projFiles
+                    (fun () ->
+                        let modTime = File.GetLastWriteTimeUtc(x)
+                        match projFiles.TryGetValue x with
+                        | (true, (x,y)) when x = modTime -> y
+                        | _ ->
+                            let doc = XmlDocument()
+                            doc.Load x
+                            let files =
+                                System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Compile"))
+                                |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
+                                |> Seq.filter (fun x -> omitFiles |> Seq.contains x |> not)
+                                |> Seq.toList
+                            let refs =
+                                System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Reference"))
+                                |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
+                                |> Seq.filter (fun x -> x <> ((typeof<CompileSource>.Assembly).GetName().Name))
+                                |> Seq.toList
+                            projFiles.[x] <- (modTime, (files, refs))
+                            files, refs
+                    )
 
 
     // This finds a copy of FSharp.Core that has the required optdata and
