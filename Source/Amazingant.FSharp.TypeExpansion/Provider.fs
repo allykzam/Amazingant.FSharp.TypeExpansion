@@ -68,7 +68,10 @@ type internal StaticParameters =
         OutputPath : string;
     }
     member x.Source =
-        let exc = (CompileSource (x.ExcludeFiles, [])).FilesAndRefs |> fst
+        let exc =
+            if System.String.IsNullOrWhiteSpace x.ExcludeFiles
+            then []
+            else (CompileSource (x.ExcludeFiles, [])).FilesAndRefs |> fst
         match x.OutputMode with
         | OutputMode.CreateSourceFile ->
             CompileSource (x.SourcePath, x.OutputPath::exc)
