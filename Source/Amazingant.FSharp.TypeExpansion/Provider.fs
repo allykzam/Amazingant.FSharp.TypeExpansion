@@ -167,9 +167,9 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         File.WriteAllText(tempCodePath, newCode)
         // Base compiler flags needed
         let baseArgs = [ "fsc"; "--noframework"; "--target:library"; ]
+        let (files, refs) = config.Source.FilesAndRefs
         // Library references
-        let refs = buildRefs (requiredRefs @ config.References)
-        let files = config.Source.FilesAndRefs |> fst
+        let refs = buildRefs (requiredRefs @ config.References @ refs)
         // Group everything together with the source files
         let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
