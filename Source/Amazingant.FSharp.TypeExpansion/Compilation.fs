@@ -18,7 +18,7 @@ module internal Compilation =
     let fileNotExist = File.Exists >> not
     let splitCommas (x : obj) = (x :?> string).Split ([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
     let strReplace (a : string) (b : string) (x : string) = x.Replace(a, b)
-    let buildRefs = Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
+    let buildRefs = Seq.map (splitCommas >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
     let switch f x y = f y x
     // Uses F#'s static type constraint feature to check for a specified
     // attribute type on anything that has the GetCustomAttributes function;
