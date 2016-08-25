@@ -74,8 +74,9 @@ module internal Compilation =
 
 
     // This finds a copy of FSharp.Core that has the required optdata and
-    // sigdata files, as well as the locations of this assembly and mscorlib.
-    // These three base references are required for all of the compiling done.
+    // sigdata files, as well as the locations of this assembly, the attributes
+    // assembly, and mscorlib. These base references are required for all of the
+    // compiling done.
     let requiredRefs =
         let fsCoreMain = @"C:\Program Files\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
         let fsCorex86 = @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
@@ -87,6 +88,7 @@ module internal Compilation =
             else
                 failwithf "Version 4.0 of F# does not appear to be installed on this system"
         [
+            typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
             typeof<CompileSource>.Assembly.Location;
             typeof<string>.Assembly.Location;
             fsCore;
