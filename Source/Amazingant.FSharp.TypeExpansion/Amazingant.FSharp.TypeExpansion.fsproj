@@ -85,7 +85,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Attributes.fs" />
     <Compile Include="Compilation.fs" />
     <Compile Include="Provider.fs" />
     <None Include="paket.template" />
@@ -95,5 +94,13 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Amazingant.FSharp.TypeExpansion.Attributes\Amazingant.FSharp.TypeExpansion.Attributes.fsproj">
+      <Name>Amazingant.FSharp.TypeExpansion.Attributes</Name>
+      <Project>{bc174d36-42ea-46dd-b7c5-2306317e75ff}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
 </Project>

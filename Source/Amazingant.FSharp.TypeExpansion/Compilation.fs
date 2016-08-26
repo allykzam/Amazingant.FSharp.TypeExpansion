@@ -3,8 +3,10 @@ namespace Amazingant.FSharp.TypeExpansion
 open Amazingant.FSharp.TypeExpansion.Attributes
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Xml
 open Microsoft.FSharp.Compiler
 
 
@@ -15,7 +17,8 @@ module internal Compilation =
     let joinTwoLines (x : string seq) = String.Join("\n\n", x)
     let fileNotExist = File.Exists >> not
     let splitCommas (x : obj) = (x :?> string).Split ([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
-    let buildRefs = Seq.collect (fun x -> ["-r";x]) >> Seq.toList
+    let strReplace (a : string) (b : string) (x : string) = x.Replace(a, b)
+    let buildRefs = Seq.map (splitCommas >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
     let switch f x y = f y x
     // Uses F#'s static type constraint feature to check for a specified
     // attribute type on anything that has the GetCustomAttributes function;
@@ -27,30 +30,53 @@ module internal Compilation =
 
 
     // Helper type for processing the user-specified source path
-    type internal CompileSource (path : string, omitFile : string) =
+    type internal CompileSource (path : string, omitFiles : string list) =
+        static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
         let (|Project|List|File|) (file : string) =
             let isProj = file.EndsWith ".fsproj"
             let isList = file.Contains ","
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitCommas file |> List.filter (fun x -> x <> omitFile))
+            | false,  true, false -> List (splitCommas file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
             | false, false,  true -> File file
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
 
-        member __.Files : string list =
+        member __.FilesAndRefs : (string list * string list) =
             match path with
-            | File x -> [x]
-            | List xs -> xs
+            | File x -> ([x], [])
+            | List xs -> (xs, [])
             | Project x ->
-                // TODO: Load XML and find source files? Exclude current file somehow?
-                [x]
+                if fileNotExist x then
+                    failwithf "Provided source path could not be found"
+                lock projFiles
+                    (fun () ->
+                        let modTime = File.GetLastWriteTimeUtc(x)
+                        match projFiles.TryGetValue x with
+                        | (true, (x,y)) when x = modTime -> y
+                        | _ ->
+                            let doc = XmlDocument()
+                            doc.Load x
+                            let files =
+                                System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Compile"))
+                                |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
+                                |> Seq.filter (fun x -> omitFiles |> Seq.contains x |> not)
+                                |> Seq.toList
+                            let refs =
+                                System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Reference"))
+                                |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
+                                |> Seq.filter (fun x -> x <> ((typeof<CompileSource>.Assembly).GetName().Name))
+                                |> Seq.toList
+                            projFiles.[x] <- (modTime, (files, refs))
+                            files, refs
+                    )
 
 
     // This finds a copy of FSharp.Core that has the required optdata and
-    // sigdata files, as well as the locations of this assembly and mscorlib.
-    // These three base references are required for all of the compiling done.
+    // sigdata files, as well as the locations of this assembly, the attributes
+    // assembly, and mscorlib. These base references are required for all of the
+    // compiling done.
     let requiredRefs =
         let fsCoreMain = @"C:\Program Files\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
         let fsCorex86 = @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
@@ -62,6 +88,7 @@ module internal Compilation =
             else
                 failwithf "Version 4.0 of F# does not appear to be installed on this system"
         [
+            typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
             typeof<CompileSource>.Assembly.Location;
             typeof<string>.Assembly.Location;
             fsCore;
@@ -98,8 +125,9 @@ module internal Compilation =
         let (errors, _, assembly) =
             try
                 let args = [ "fsc.exe"; "--noframework"; "-a"; ]
-                let refs = buildRefs (requiredRefs@refs)
-                let args = args @ refs @ source.Files |> Seq.toArray
+                let (files, extraRefs) = source.FilesAndRefs
+                let refs = buildRefs (requiredRefs @ refs @ extraRefs)
+                let args = args @ refs @ files |> Seq.toArray
                 let compiler = SimpleSourceCodeServices.SimpleSourceCodeServices()
                 compiler.CompileToDynamicAssembly(args, None)
             with

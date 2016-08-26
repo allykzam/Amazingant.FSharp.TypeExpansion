@@ -61,21 +61,26 @@ type OutputMode =
 type internal StaticParameters =
     {
         SourcePath : string;
+        ExcludeFiles : string;
         Refs : string;
         Flags : string;
         OutputMode : OutputMode;
         OutputPath : string;
     }
     member x.Source =
+        let exc =
+            if System.String.IsNullOrWhiteSpace x.ExcludeFiles
+            then []
+            else (CompileSource (x.ExcludeFiles, [])).FilesAndRefs |> fst
         match x.OutputMode with
         | OutputMode.CreateSourceFile ->
-            CompileSource (x.SourcePath, x.OutputPath)
+            CompileSource (x.SourcePath, x.OutputPath::exc)
         | _ ->
-            CompileSource (x.SourcePath, "")
+            CompileSource (x.SourcePath, exc)
     member x.References = splitCommas x.Refs
     member x.CompilerFlags = splitCommas x.Flags
     member x.IsValid () =
-        let missingFiles = x.Source.Files |> Seq.filter fileNotExist |> joinLines
+        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter fileNotExist |> joinLines
         // If any files are missing, throw an exception that indicates the
         // current path; this will allow the user to determine how to fix any
         // relative paths that they specified
@@ -165,10 +170,11 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         File.WriteAllText(tempCodePath, newCode)
         // Base compiler flags needed
         let baseArgs = [ "fsc"; "--noframework"; "--target:library"; ]
+        let (files, refs) = config.Source.FilesAndRefs
         // Library references
-        let refs = buildRefs (requiredRefs @ config.References)
+        let refs = buildRefs (requiredRefs @ config.References @ refs)
         // Group everything together with the source files
-        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; config.Source.Files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
+        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
         let (errors,_) = SimpleSourceCodeServices.SimpleSourceCodeServices().Compile(args)
         // Throw an exception if there were errors
@@ -264,11 +270,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
             if ty = typeof<Expand> then
                 let f = buildStaticParameter
                 let src = f "Source"        (None : string option            ) sourceXml
+                let exc = f "ExcludeSource" (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
                 let ref = f "References"    (Some ""                         ) "Any library references required by the source"
                 let flg = f "CompilerFlags" (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
                 let pth = f "OutputPath"    (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
                 let out = f "OutputMode"    (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
-                [| src; ref; flg; pth; out; |]
+                [| src; exc; ref; flg; pth; out; |]
             else
                 [| |]
 
@@ -279,11 +286,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
             let config =
                 {
-                    SourcePath = args.[0] :?> string;
-                          Refs = args.[1] :?> string;
-                         Flags = args.[2] :?> string;
-                    OutputPath = args.[3] :?> string;
-                    OutputMode = args.[4] :?> OutputMode;
+                      SourcePath = args.[0] :?> string;
+                    ExcludeFiles = args.[1] :?> string;
+                            Refs = args.[2] :?> string;
+                           Flags = args.[3] :?> string;
+                      OutputPath = args.[4] :?> string;
+                      OutputMode = args.[5] :?> OutputMode;
                 }
             // For either of the two modes that make output files, check the
             // specified output path

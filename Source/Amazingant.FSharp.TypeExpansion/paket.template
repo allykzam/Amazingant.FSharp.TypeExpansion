@@ -1,3 +1,7 @@
 type project
 include-pdbs true
 authors amazingant (Anthony Perez)
+files
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/net45
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/net45
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/net45
