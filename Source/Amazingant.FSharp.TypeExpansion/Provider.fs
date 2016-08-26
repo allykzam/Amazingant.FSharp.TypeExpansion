@@ -8,7 +8,6 @@ open System.IO
 open System.Reflection
 
 open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Core.CompilerServices
 
 
@@ -80,7 +79,7 @@ type internal StaticParameters =
     member x.References = splitCommas x.Refs
     member x.CompilerFlags = splitCommas x.Flags
     member x.IsValid () =
-        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter fileNotExist |> joinLines
+        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
         // If any files are missing, throw an exception that indicates the
         // current path; this will allow the user to determine how to fix any
         // relative paths that they specified
@@ -154,10 +153,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         let providedCode = Path.ChangeExtension(Path.GetTempFileName(), ".dummy.fs")
         File.WriteAllText(providedCode, sprintf "namespace %s\ntype %s() =\n    member __.Dummy = true" ns ty)
         let providedPath = Path.ChangeExtension(providedCode, ".dummy.dll")
-        let args = [| "fsc"; "--noframework"; "--target:library"; (sprintf "-o:%s" providedPath); providedCode |]
-        let (errors,_) = SimpleSourceCodeServices.SimpleSourceCodeServices().Compile(args)
-        handleCompilerErrors errors
-        providedPath
+        let args = [| "--noframework"; "--target:library"; (sprintf "-o:%s" providedPath); providedCode |]
+        runFsc args
+        if File.NotExists providedPath then
+            failwithf "Could not compile dummy library for type provider"
+        else
+            providedPath
 
 
     // Builds an assembly that contains the original source and the expanded
@@ -169,18 +170,19 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         let  tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         File.WriteAllText(tempCodePath, newCode)
         // Base compiler flags needed
-        let baseArgs = [ "fsc"; "--noframework"; "--target:library"; ]
+        let baseArgs = [ "--noframework"; "--target:library"; ]
         let (files, refs) = config.Source.FilesAndRefs
         // Library references
         let refs = buildRefs (requiredRefs @ config.References @ refs)
         // Group everything together with the source files
         let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
-        let (errors,_) = SimpleSourceCodeServices.SimpleSourceCodeServices().Compile(args)
-        // Throw an exception if there were errors
-        handleCompilerErrors errors
+        runFsc args
         // Return the library file path
-        tempLibPath
+        if File.NotExists tempLibPath then
+            failwithf "Could not compile final assembly"
+        else
+            tempLibPath
 
 
     let buildAssembly (config : StaticParameters) (ns, ty) =

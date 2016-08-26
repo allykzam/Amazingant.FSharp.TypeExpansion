@@ -7,15 +7,17 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Xml
-open Microsoft.FSharp.Compiler
 
 
 [<AutoOpen>]
 module internal Compilation =
+    type File with
+        static member NotExists (path : string) =
+            not <| File.Exists path
+
     let notEmpty = Seq.isEmpty >> not
     let joinLines    (x : string seq) = String.Join("\n"  , x)
     let joinTwoLines (x : string seq) = String.Join("\n\n", x)
-    let fileNotExist = File.Exists >> not
     let splitCommas (x : obj) = (x :?> string).Split ([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
     let strReplace (a : string) (b : string) (x : string) = x.Replace(a, b)
     let buildRefs = Seq.map (splitCommas >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
@@ -48,7 +50,7 @@ module internal Compilation =
             | File x -> ([x], [])
             | List xs -> (xs, [])
             | Project x ->
-                if fileNotExist x then
+                if File.NotExists x then
                     failwithf "Provided source path could not be found"
                 lock projFiles
                     (fun () ->
@@ -95,52 +97,39 @@ module internal Compilation =
         ]
 
 
-    // Filters given errors to ignore warnings, throws exception if proper
-    // errors exist
-    let handleCompilerErrors (errors : FSharpErrorInfo seq) =
-        // Gather any compilation errors
-        let msg =
-            errors
-            |> Seq.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
-            |> Seq.map
-                (fun x ->
-                    sprintf "%s (%i,%i)-(%i,%i) %s"
-                        x.FileName
-                        x.StartLineAlternate
-                        x.StartColumn
-                        x.EndLineAlternate
-                        x.EndColumn
-                        x.Message
-                    )
-            |> joinLines
-        // If there were any errors, throw them
-        match msg.Trim() with
-        | null | "" -> ()
-        | x -> failwithf "Encountered errors while compiling source:\n%s" x
+    let fscLocation = @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe"
+    let runFsc (args : string seq) =
+        use proc = new System.Diagnostics.Process()
+        let si = System.Diagnostics.ProcessStartInfo(fscLocation)
+        proc.StartInfo <- si
+        si.UseShellExecute <- false
+        si.CreateNoWindow <- true
+        si.RedirectStandardError <- true
+        si.RedirectStandardInput <- true
+        si.RedirectStandardOutput <- true
+        si.Arguments <-
+            args
+            |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
+            |> fun x -> String.Join(" ", x)
+        if not <| proc.Start() then
+            failwithf "Could not run fsc.exe"
+        proc.WaitForExit()
+        let err = proc.StandardError.ReadToEnd()
+        if not <| String.IsNullOrWhiteSpace err then
+            failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
-    // Builds and returns a dynamic assembly from the given source
-    let dynamicBuild (source : CompileSource) refs =
-        // Compile and gather the results
-        let (errors, _, assembly) =
-            try
-                let args = [ "fsc.exe"; "--noframework"; "-a"; ]
-                let (files, extraRefs) = source.FilesAndRefs
-                let refs = buildRefs (requiredRefs @ refs @ extraRefs)
-                let args = args @ refs @ files |> Seq.toArray
-                let compiler = SimpleSourceCodeServices.SimpleSourceCodeServices()
-                compiler.CompileToDynamicAssembly(args, None)
-            with
-            | ex ->
-                // If the compiler throws an exception, add an extra message
-                failwithf "Internal compiler error:\n%A" ex
-
-        // Throw an exception if there were compilation errors
-        handleCompilerErrors errors
-        // If compilation succeeded, the assembly should have been returned
-        match assembly with
-        | None -> failwithf "Could not compile source"
-        | Some x -> x
+    let partialBuild (source : CompileSource) refs =
+        let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
+        let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; ]
+        let (files, extraRefs) = source.FilesAndRefs
+        let refs = buildRefs (requiredRefs @ refs @ extraRefs)
+        let args = args @ refs @ files |> Seq.toArray
+        runFsc args
+        if File.NotExists tempLibPath then
+            failwithf "Could not compile source"
+        else
+            Assembly.LoadFrom tempLibPath
 
 
     // Checks the given method to see if it can be used for expansion
@@ -159,7 +148,7 @@ module internal Compilation =
     // Processes the given source, passes types through expanders, and returns
     // the expanded source code
     let processFiles source refs =
-        let asm = dynamicBuild source refs
+        let asm = partialBuild source refs
         // Get the types that can be expanded
         let targets =
             asm.DefinedTypes
