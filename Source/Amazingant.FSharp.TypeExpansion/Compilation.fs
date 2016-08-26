@@ -104,6 +104,9 @@ module internal Compilation =
         proc.StartInfo <- si
         si.UseShellExecute <- false
         si.CreateNoWindow <- true
+        si.RedirectStandardError <- true
+        si.RedirectStandardInput <- true
+        si.RedirectStandardOutput <- true
         si.Arguments <-
             args
             |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
@@ -111,6 +114,9 @@ module internal Compilation =
         if not <| proc.Start() then
             failwithf "Could not run fsc.exe"
         proc.WaitForExit()
+        let err = proc.StandardError.ReadToEnd()
+        if not <| String.IsNullOrWhiteSpace err then
+            failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
     let partialBuild (source : CompileSource) refs =
