@@ -12,7 +12,6 @@ open SourceLink
 
 
 // These values power the content of the nuspec file and the AssemblyInfo file
-let ProjectName = "Amazingant.FSharp.TypeExpansion"
 let ProjectDescription = "Code generation tool that applies expansion functions to simple types"
 let CopyrightYearStart = 2016
 let CopyrightInfo = sprintf "Copyright © %s amazingant (Anthony Perez)"
@@ -40,11 +39,12 @@ let buildConfig =
     | None -> "Release"
     | Some _ -> "Debug"
 
-let assemblyInfoAttributes =
+let assemblyInfoAttributes (asmFile) =
+    let projectName = FileInfo(asmFile).Directory.Name
     let copyrightYear = match release.Date with None -> System.DateTime.Now | Some dt -> dt
     [
-        Attribute.Title ProjectName;
-        Attribute.Product ProjectName;
+        Attribute.Title projectName;
+        Attribute.Product projectName;
         Attribute.Description ProjectDescription;
         Attribute.Copyright <| buildCopyrightText copyrightYear;
         Attribute.Version release.AssemblyVersion;
@@ -78,7 +78,8 @@ Target "AssemblyInfo" (fun _ ->
     !! "Source/**/AssemblyInfo.fs"
     |> Seq.iter
         (fun x ->
-            CreateFSharpAssemblyInfo x assemblyInfoAttributes
+            let attribs = assemblyInfoAttributes x
+            CreateFSharpAssemblyInfo x attribs
             fixLineEndings x
         )
 )
