@@ -78,6 +78,9 @@ type internal StaticParameters =
             CompileSource (x.SourcePath, exc)
     member x.References = splitCommas x.Refs
     member x.CompilerFlags = splitCommas x.Flags
+    member x.SourceModifiedTimes =
+        fst x.Source.FilesAndRefs
+        |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
     member x.IsValid () =
         let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
         // If any files are missing, throw an exception that indicates the
@@ -96,7 +99,7 @@ type Expand () = inherit obj()
 [<TypeProvider>]
 type ExpansionProvider (tpConfig : TypeProviderConfig) =
     let invalidateEvent = new Event<EventHandler, EventArgs>()
-    static let state = new Dictionary<StaticParameters, Assembly option * Assembly>()
+    static let state = new Dictionary<StaticParameters, (string * DateTime) list * Assembly option * Assembly>()
     static let mutable currentAssembly : StaticParameters option = None
 
 
@@ -132,7 +135,8 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         currentAssembly
         |> Option.map
             (fun x ->
-                (fst state.[x])
+                state.[x]
+                |> function (_,x,_) -> x
                 |> Option.map
                     (fun x ->
                         x.DefinedTypes
@@ -239,11 +243,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
             | Some x ->
                 match x.OutputMode with
                 | OutputMode.BuildIntoProject ->
-                    (fst state.[x])
+                    state.[x]
+                    |> function (_,x,_) -> x
                     |> Option.map (fun x -> File.ReadAllBytes x.Location)
                     |> Option.toObj
                 | OutputMode.CreateAssembly | OutputMode.CreateSourceFile ->
-                    File.ReadAllBytes (snd state.[x]).Location
+                    File.ReadAllBytes (state.[x] |> function (_,_,x) -> x).Location
                 | _ -> failwithf "Invalid OutputMode value"
 
         // Tells the compiler how to handle calls to functions, constructors,
@@ -312,12 +317,34 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
             if config.IsValid() then
                 lock state
                     (fun () ->
-                        if not <| state.ContainsKey config then
+                        // Cache the modified times for the source (accessing
+                        // this requires hitting the disk multiple times)
+                        let mt = config.SourceModifiedTimes
+                        let build =
+                            // Build if the state does not contain this config
+                            if not <| state.ContainsKey config then true
+                            else
+                                // If the state contains this config...
+                                let (x,_,_) = state.[config]
+                                // Generate a set from the old and new modified
+                                // times
+                                let x = x |> Set.ofList
+                                let y = mt |> Set.ofList
+                                // Build if the two sets have differing file
+                                // counts
+                                x.Count <> y.Count ||
+                                // Or if the union of the two sets is not the
+                                // same size as either set
+                                (Set.intersect x y).Count <> x.Count
+                        // If any of the above says to build, then go build
+                        if build then
                             let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
-                            state.[config]  <- ((file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
+                            state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
                             currentAssembly <- Some config
                     )
-            (snd state.[config]).GetType(ty.Namespace + "." + y.[y.Length - 1])
+            state.[config]
+            |> function (_,_,x) -> x
+            |> fun x -> x.GetType(ty.Namespace + "." + y.[y.Length - 1])
 
 
     interface IDisposable with
