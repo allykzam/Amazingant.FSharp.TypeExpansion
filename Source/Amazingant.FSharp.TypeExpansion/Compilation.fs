@@ -12,10 +12,13 @@ open Microsoft.FSharp.Compiler
 
 [<AutoOpen>]
 module internal Compilation =
+    type File with
+        static member NotExists (path : string) =
+            not <| File.Exists path
+
     let notEmpty = Seq.isEmpty >> not
     let joinLines    (x : string seq) = String.Join("\n"  , x)
     let joinTwoLines (x : string seq) = String.Join("\n\n", x)
-    let fileNotExist = File.Exists >> not
     let splitCommas (x : obj) = (x :?> string).Split ([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
     let strReplace (a : string) (b : string) (x : string) = x.Replace(a, b)
     let buildRefs = Seq.map (splitCommas >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
@@ -48,7 +51,7 @@ module internal Compilation =
             | File x -> ([x], [])
             | List xs -> (xs, [])
             | Project x ->
-                if fileNotExist x then
+                if File.NotExists x then
                     failwithf "Provided source path could not be found"
                 lock projFiles
                     (fun () ->

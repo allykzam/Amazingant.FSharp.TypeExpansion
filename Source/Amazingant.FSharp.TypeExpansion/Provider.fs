@@ -80,7 +80,7 @@ type internal StaticParameters =
     member x.References = splitCommas x.Refs
     member x.CompilerFlags = splitCommas x.Flags
     member x.IsValid () =
-        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter fileNotExist |> joinLines
+        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
         // If any files are missing, throw an exception that indicates the
         // current path; this will allow the user to determine how to fix any
         // relative paths that they specified
