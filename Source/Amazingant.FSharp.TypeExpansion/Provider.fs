@@ -76,8 +76,8 @@ type internal StaticParameters =
             CompileSource (x.SourcePath, x.OutputPath::exc)
         | _ ->
             CompileSource (x.SourcePath, exc)
-    member x.References = splitCommas x.Refs
-    member x.CompilerFlags = splitCommas x.Flags
+    member x.References = splitValues x.Refs
+    member x.CompilerFlags = splitValues x.Flags
     member x.SourceModifiedTimes =
         fst x.Source.FilesAndRefs
         |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
