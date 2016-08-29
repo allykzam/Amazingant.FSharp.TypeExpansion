@@ -36,7 +36,7 @@ module internal Compilation =
         static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
         let (|Project|List|File|) (file : string) =
             let isProj = file.EndsWith ".fsproj"
-            let isList = file.Contains ","
+            let isList = file.Contains "," || file.Contains "\n" || file.Contains "\r"
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
