@@ -1,3 +1,8 @@
+#### 0.3.0 - 2016-08-29
+* #4: Add a comment header to generated files when set to `CreateSourceFile`
+* #6: Adjust files, references, etc. to split on line break characters in
+  addition to commas
+
 #### 0.2.0 - 2016-08-26
 * #1: Add support for using a project file as the source
     * Requires specifying an ExcludeSource file or comma-delimited list of
