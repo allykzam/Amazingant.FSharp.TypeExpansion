@@ -18,9 +18,9 @@ module internal Compilation =
     let notEmpty = Seq.isEmpty >> not
     let joinLines    (x : string seq) = String.Join("\n"  , x)
     let joinTwoLines (x : string seq) = String.Join("\n\n", x)
-    let splitCommas (x : obj) = (x :?> string).Split ([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
+    let splitValues (x : obj) = (x :?> string).Split ([|','; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
     let strReplace (a : string) (b : string) (x : string) = x.Replace(a, b)
-    let buildRefs = Seq.map (splitCommas >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
+    let buildRefs = Seq.map (splitValues >> List.head) >> Seq.distinctBy (Path.GetFileName >> strReplace ".dll" "") >> Seq.collect (fun x -> ["-r";x]) >> Seq.toList
     let switch f x y = f y x
     // Uses F#'s static type constraint feature to check for a specified
     // attribute type on anything that has the GetCustomAttributes function;
@@ -40,7 +40,7 @@ module internal Compilation =
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitCommas file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
+            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
             | false, false,  true -> File file
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
