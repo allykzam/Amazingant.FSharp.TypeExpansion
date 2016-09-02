@@ -121,7 +121,7 @@ module internal Compilation =
 
     let partialBuild (source : CompileSource) refs flags =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
-        let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; ]
+        let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
