@@ -121,7 +121,7 @@ module internal Compilation =
 
     let partialBuild (source : CompileSource) refs flags =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
-        let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; ]
+        let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
@@ -176,7 +176,17 @@ module internal Compilation =
                     (fun y ->
                         let yAttr : ExpandableTypeAttribute = y.GetCustomAttribute()
                         if yAttr.CanUseTemplate(xAttr.Name, xAttr.RequireExplicitUse) then
-                            x.Invoke(null, [|y|]) :?> string
+                            try
+                                x.Invoke(null, [|y|]) :?> string
+                            with
+                            | :? System.Reflection.TargetInvocationException as ex ->
+                                failwithf "Encountered a %s processing type '%s' with expander '%s.%s':\n%s\n\n%s"
+                                    (ex.InnerException.GetType().FullName)
+                                    y.FullName
+                                    x.DeclaringType.FullName
+                                    x.Name
+                                    ex.InnerException.Message
+                                    ex.InnerException.StackTrace
                         else
                             ""
                     )
