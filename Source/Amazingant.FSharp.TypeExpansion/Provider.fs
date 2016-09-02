@@ -191,7 +191,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
     let buildAssembly (config : StaticParameters) (ns, ty) =
         // Process the source files and expand appropriate types
-        let newCode = processFiles config.Source config.References
+        let newCode = processFiles config.Source config.References config.CompilerFlags
         // Build an assembly with some dummy info to make Visual Studio happy
         let providedAssembly = buildProvidedAssembly (ns, ty)
 

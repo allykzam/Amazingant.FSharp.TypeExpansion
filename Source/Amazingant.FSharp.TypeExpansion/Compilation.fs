@@ -119,12 +119,12 @@ module internal Compilation =
             failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
-    let partialBuild (source : CompileSource) refs =
+    let partialBuild (source : CompileSource) refs flags =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
-        let args = args @ refs @ files |> Seq.toArray
+        let args = args @ refs @ files @ flags |> Seq.toArray
         runFsc args
         if File.NotExists tempLibPath then
             failwithf "Could not compile source"
@@ -147,8 +147,8 @@ module internal Compilation =
 
     // Processes the given source, passes types through expanders, and returns
     // the expanded source code
-    let processFiles source refs =
-        let asm = partialBuild source refs
+    let processFiles source refs flags =
+        let asm = partialBuild source refs flags
         // Get the types that can be expanded
         let targets =
             asm.DefinedTypes
