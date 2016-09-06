@@ -261,5 +261,13 @@ the template name -- will result in the template never being applied to any base
 types.
 
 
+License
+-------
+
+This project is Copyright © 2016 Anthony Perez a.k.a. amazingant, and is
+licensed under the MIT license. See the [LICENSE file][license] for more
+details.
+
 
 [mixin-provider]: https://github.com/pezipink/MixinProvider
+[license]: https://github.com/amazingant/Amazingant.FSharp.TypeExpansion/blob/master/LICENSE
