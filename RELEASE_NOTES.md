@@ -1,3 +1,6 @@
+#### 0.4.1 - 2016-09-06
+* #3: License project under the MIT license
+
 #### 0.4.0 - 2016-09-02
 * #8: Unwrap exceptions thrown by expanders; no longer shows a
   TargetInvocationException. Adjusted intermediate build stage to include
