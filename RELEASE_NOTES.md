@@ -1,3 +1,7 @@
+#### 0.5.0 - 2016-09-07
+* Add TypeIntrospection module; includes a helper function for use in templates
+  which gets the "code-friendly" name of a given type
+
 #### 0.4.1 - 2016-09-06
 * #3: License project under the MIT license
 
