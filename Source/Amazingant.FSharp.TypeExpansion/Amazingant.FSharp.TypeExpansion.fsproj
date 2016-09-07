@@ -56,6 +56,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Compilation.fs" />
     <Compile Include="Provider.fs" />
+    <Compile Include="TypeIntrospection.fs" />
     <None Include="paket.template" />
   </ItemGroup>
   <ItemGroup>
