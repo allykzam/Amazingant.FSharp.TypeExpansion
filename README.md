@@ -296,6 +296,10 @@ some points worth mentioning.
   library was built to help streamline the process of writing code that writes
   code, so it may be helpful.
 
+* The paths for `FSharp.Core` and `fsc.exe` are hard-coded, so the type provider
+  currently only works on 64-bit Windows systems.
+
+
 License
 -------
 
