@@ -160,7 +160,7 @@ Note that the indentation in this code suddenly shifts as the call to `sprintf`
 begins. Template functions can work around this by using literal line breaks in
 their strings via `\n`, but indentation still needs to be provided for the
 generated code. If one is already familiar with it, the `SquirrelMix` code from
-the [`MixinProvider`][mixin-provider] project can be used to streamline this
+the [MixinProvider][mixin-provider] project can be used to streamline this
 process.
 
 
@@ -264,6 +264,37 @@ Note that setting the `requireExplicitUse` parameter for a template function to
 the template name -- will result in the template never being applied to any base
 types.
 
+
+Known Issues
+------------
+
+As I actively utilize this library in both personal and professional projects,
+the hope is that there will never be any major issues. However, there are still
+some points worth mentioning.
+
+* Keeping the type alias for the type provider (`type X = Amazingant...`)
+  uncommented can affect the performance of Visual Studio, in addition to making
+  the "file has changed" dialog open frequently. Unfortunately, there is little
+  that can be safely done about this; the type provider calls to the F# compiler
+  every time it detects that the local file(s) have changed to ensure that the
+  output is always up-to-date. This could be done less frequently, but at the
+  risk of providing you with outdated output. If this becomes a problem on a
+  slower system, consider commenting out the type provider.
+
+* In some cases, when building a project, the project's output will contain an
+  outdated copy of the expanded source that was created by this type provider.
+  This happens if the type provider has not had a chance to run recently; the
+  main project build picks up the old copy of the expanded source before the
+  type provider has a chance to re-apply the expansion templates. If this
+  happens, just rebuild the project one more time, and it will pick up the
+  expanded source that was created during the first build.
+
+* Templates are a bit confusing to write. Ever tried writing a type provider
+  that builds source that builds quotations to build source? Any amount of help
+  would be useful. Consider taking a look at the [MixinProvider][mixin-provider]
+  project, and utilizing the `SquirrelMix` code from there. The `SquirrelMix`
+  library was built to help streamline the process of writing code that writes
+  code, so it may be helpful.
 
 License
 -------
