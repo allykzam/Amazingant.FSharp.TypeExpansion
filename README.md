@@ -10,6 +10,10 @@ This expansion system allows creating short and simple type definitions with a
 single complex template, with larger resulting types that contain additional
 behavior.
 
+For some working examples, please take a look at the accompanying
+[templates][templates-proj] project, which includes some real-world samples that
+are being used for real-world code.
+
 
 Examples
 --------
@@ -269,5 +273,6 @@ licensed under the MIT license. See the [LICENSE file][license] for more
 details.
 
 
+[templates-proj]: https://github.com/amazingant/Amazingant.FSharp.TypeExpansion.Templates
 [mixin-provider]: https://github.com/pezipink/MixinProvider
 [license]: https://github.com/amazingant/Amazingant.FSharp.TypeExpansion/blob/master/LICENSE
