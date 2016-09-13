@@ -315,6 +315,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                       OutputPath = args.[5] :?> string;
                       OutputMode = args.[6] :?> OutputMode;
                 }
+            let wd =
+                if System.String.IsNullOrWhiteSpace config.WorkingDir
+                then System.Environment.CurrentDirectory
+                elif not <| Path.IsPathRooted config.WorkingDir then
+                    failwithf "System.IO.Path.IsPathRooted indicates that the provided working directory is not an absolute path:\n%s\nDid you mean to specify e.g. '(__SOURCE_DIRECTORY__)'?"
+                        config.WorkingDir
+                else config.WorkingDir
+            let config = { config with WorkingDir = wd }
             // For either of the two modes that make output files, check the
             // specified output path
             match config.OutputMode with
