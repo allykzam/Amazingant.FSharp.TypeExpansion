@@ -83,17 +83,22 @@ type internal StaticParameters =
         fst x.Source.FilesAndRefs
         |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
     member x.IsValid () =
-        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
-        // If any files are missing, throw an exception that indicates the
-        // current path; this will allow the user to determine how to fix any
-        // relative paths that they specified
-        match missingFiles.Trim() with
-        | null | "" -> ()
-        | x ->
-            failwithf "Specified file(s) do not exist; paths are relative to:\n%s\n\n%s\n"
-                Environment.CurrentDirectory
-                x
-        true
+        let oldWD = Environment.CurrentDirectory
+        try
+            Environment.CurrentDirectory <- x.WorkingDir
+            let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
+            // If any files are missing, throw an exception that indicates the
+            // current path; this will allow the user to determine how to fix
+            // any relative paths that they specified
+            match missingFiles.Trim() with
+            | null | "" -> ()
+            | xs ->
+                failwithf "Specified file(s) do not exist; paths are relative to:\n%s\nIf this does not appear right, try setting the WorkingDirectory parameter?\n\n%s\n"
+                    x.WorkingDir
+                    xs
+            true
+        finally
+            Environment.CurrentDirectory <- oldWD
 
 type Expand () = inherit obj()
 
@@ -361,9 +366,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                                 (Set.intersect x y).Count <> x.Count
                         // If any of the above says to build, then go build
                         if build then
-                            let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
-                            state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
-                            currentAssembly <- Some config
+                            let oldWD = Environment.CurrentDirectory
+                            try
+                                Environment.CurrentDirectory <- config.WorkingDir
+                                let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
+                                state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
+                                currentAssembly <- Some config
+                            finally
+                                Environment.CurrentDirectory <- oldWD
                     )
             state.[config]
             |> function (_,_,x) -> x
