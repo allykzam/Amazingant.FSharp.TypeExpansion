@@ -60,6 +60,7 @@ type OutputMode =
 type internal StaticParameters =
     {
         SourcePath : string;
+        WorkingDir : string;
         ExcludeFiles : string;
         Refs : string;
         Flags : string;
@@ -288,13 +289,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                     Environment.CurrentDirectory
             if ty = typeof<Expand> then
                 let f = buildStaticParameter
-                let src = f "Source"        (None : string option            ) sourceXml
-                let exc = f "ExcludeSource" (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
-                let ref = f "References"    (Some ""                         ) "Any library references required by the source"
-                let flg = f "CompilerFlags" (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
-                let pth = f "OutputPath"    (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
-                let out = f "OutputMode"    (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
-                [| src; exc; ref; flg; pth; out; |]
+                let src = f "Source"           (None : string option            ) sourceXml
+                let cwd = f "WorkingDirectory" (Some ""                         ) "An absolute path to use as the working directory to use while processing files. If provided, all source file paths, library references, and output paths will be relative to this path."
+                let exc = f "ExcludeSource"    (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
+                let ref = f "References"       (Some ""                         ) "Any library references required by the source"
+                let flg = f "CompilerFlags"    (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
+                let pth = f "OutputPath"       (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
+                let out = f "OutputMode"       (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
+                [| src; cwd; exc; ref; flg; pth; out; |]
             else
                 [| |]
 
@@ -306,11 +308,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
             let config =
                 {
                       SourcePath = args.[0] :?> string;
-                    ExcludeFiles = args.[1] :?> string;
-                            Refs = args.[2] :?> string;
-                           Flags = args.[3] :?> string;
-                      OutputPath = args.[4] :?> string;
-                      OutputMode = args.[5] :?> OutputMode;
+                      WorkingDir = args.[1] :?> string;
+                    ExcludeFiles = args.[2] :?> string;
+                            Refs = args.[3] :?> string;
+                           Flags = args.[4] :?> string;
+                      OutputPath = args.[5] :?> string;
+                      OutputMode = args.[6] :?> OutputMode;
                 }
             // For either of the two modes that make output files, check the
             // specified output path
