@@ -265,6 +265,30 @@ the template name -- will result in the template never being applied to any base
 types.
 
 
+Paths
+-----
+
+Sometimes the path that the type provider uses will not match the expected path.
+This can happen while working with a new file that has not been saved anywhere
+yet (Visual Studio uses a temporary file name and path until saved), or while
+working with a solution where multiple projects use this type provider. To
+resolve this (or to specify a custom path if desired), the `WorkingDirectory`
+parameter can be specified. To overcome the mentioned issue involving multiple
+projects in a single solution, just use `__SOURCE_DIRECTORY__` as the value. The
+following examples should all work, assuming the directory structure exists.
+
+```FSharp
+// Fixes the directory used when multiple open projects are using the type
+// provider; note that parentheses are required around '__SOURCE_DIRECTORY__'
+type Test = Amazingant.FSharp.TypeExpansion.Expand<"SourceFile.fsx", WorkingDirectory=(__SOURCE_DIRECTORY__)>
+
+// Need a special path? No problem!
+[<Literal>]
+let CustomDirectory = __SOURCE_DIRECTORY__ + "/Your/Path/Here"
+type Test = Amazingant.FSharp.TypeExpansion.Expand<"SourceFile.fsx", WorkingDirectory=CustomDirectory>
+```
+
+
 Known Issues
 ------------
 
