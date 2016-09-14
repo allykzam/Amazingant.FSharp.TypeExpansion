@@ -51,7 +51,7 @@ module internal Compilation =
             | List xs -> (xs, [])
             | Project x ->
                 if File.NotExists x then
-                    failwithf "Provided source path could not be found"
+                    failwithf "Provided source path could not be found. Paths are relative to:\n%s" Environment.CurrentDirectory
                 lock projFiles
                     (fun () ->
                         let modTime = File.GetLastWriteTimeUtc(x)

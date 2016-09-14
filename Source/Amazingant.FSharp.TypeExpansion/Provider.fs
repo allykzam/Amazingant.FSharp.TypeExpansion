@@ -60,6 +60,7 @@ type OutputMode =
 type internal StaticParameters =
     {
         SourcePath : string;
+        WorkingDir : string;
         ExcludeFiles : string;
         Refs : string;
         Flags : string;
@@ -82,17 +83,22 @@ type internal StaticParameters =
         fst x.Source.FilesAndRefs
         |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
     member x.IsValid () =
-        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
-        // If any files are missing, throw an exception that indicates the
-        // current path; this will allow the user to determine how to fix any
-        // relative paths that they specified
-        match missingFiles.Trim() with
-        | null | "" -> ()
-        | x ->
-            failwithf "Specified file(s) do not exist; paths are relative to:\n%s\n\n%s\n"
-                Environment.CurrentDirectory
-                x
-        true
+        let oldWD = Environment.CurrentDirectory
+        try
+            Environment.CurrentDirectory <- x.WorkingDir
+            let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
+            // If any files are missing, throw an exception that indicates the
+            // current path; this will allow the user to determine how to fix
+            // any relative paths that they specified
+            match missingFiles.Trim() with
+            | null | "" -> ()
+            | xs ->
+                failwithf "Specified file(s) do not exist; paths are relative to:\n%s\nIf this does not appear right, try setting the WorkingDirectory parameter?\n\n%s\n"
+                    x.WorkingDir
+                    xs
+            true
+        finally
+            Environment.CurrentDirectory <- oldWD
 
 type Expand () = inherit obj()
 
@@ -288,13 +294,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                     Environment.CurrentDirectory
             if ty = typeof<Expand> then
                 let f = buildStaticParameter
-                let src = f "Source"        (None : string option            ) sourceXml
-                let exc = f "ExcludeSource" (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
-                let ref = f "References"    (Some ""                         ) "Any library references required by the source"
-                let flg = f "CompilerFlags" (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
-                let pth = f "OutputPath"    (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
-                let out = f "OutputMode"    (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
-                [| src; exc; ref; flg; pth; out; |]
+                let src = f "Source"           (None : string option            ) sourceXml
+                let cwd = f "WorkingDirectory" (Some ""                         ) "An absolute path to use as the working directory to use while processing files. If provided, all source file paths, library references, and output paths will be relative to this path."
+                let exc = f "ExcludeSource"    (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
+                let ref = f "References"       (Some ""                         ) "Any library references required by the source"
+                let flg = f "CompilerFlags"    (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
+                let pth = f "OutputPath"       (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
+                let out = f "OutputMode"       (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
+                [| src; cwd; exc; ref; flg; pth; out; |]
             else
                 [| |]
 
@@ -306,12 +313,21 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
             let config =
                 {
                       SourcePath = args.[0] :?> string;
-                    ExcludeFiles = args.[1] :?> string;
-                            Refs = args.[2] :?> string;
-                           Flags = args.[3] :?> string;
-                      OutputPath = args.[4] :?> string;
-                      OutputMode = args.[5] :?> OutputMode;
+                      WorkingDir = args.[1] :?> string;
+                    ExcludeFiles = args.[2] :?> string;
+                            Refs = args.[3] :?> string;
+                           Flags = args.[4] :?> string;
+                      OutputPath = args.[5] :?> string;
+                      OutputMode = args.[6] :?> OutputMode;
                 }
+            let wd =
+                if System.String.IsNullOrWhiteSpace config.WorkingDir
+                then System.Environment.CurrentDirectory
+                elif not <| Path.IsPathRooted config.WorkingDir then
+                    failwithf "System.IO.Path.IsPathRooted indicates that the provided working directory is not an absolute path:\n%s\nDid you mean to specify e.g. '(__SOURCE_DIRECTORY__)'?"
+                        config.WorkingDir
+                else config.WorkingDir
+            let config = { config with WorkingDir = wd }
             // For either of the two modes that make output files, check the
             // specified output path
             match config.OutputMode with
@@ -350,9 +366,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                                 (Set.intersect x y).Count <> x.Count
                         // If any of the above says to build, then go build
                         if build then
-                            let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
-                            state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
-                            currentAssembly <- Some config
+                            let oldWD = Environment.CurrentDirectory
+                            try
+                                Environment.CurrentDirectory <- config.WorkingDir
+                                let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
+                                state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
+                                currentAssembly <- Some config
+                            finally
+                                Environment.CurrentDirectory <- oldWD
                     )
             state.[config]
             |> function (_,_,x) -> x
