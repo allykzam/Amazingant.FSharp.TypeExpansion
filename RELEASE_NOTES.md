@@ -1,3 +1,7 @@
+#### 0.6.0 - 2016-09-14
+* #11: Add new `WorkingDirectory` static parameter to help path issues when
+  using the provider with multiple projects in a single solution
+
 #### 0.5.0 - 2016-09-07
 * Add TypeIntrospection module; includes a helper function for use in templates
   which gets the "code-friendly" name of a given type
