@@ -188,7 +188,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         // Group everything together with the source files
         let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
-        runFsc args
+        runFsc args config.CompilerTimeout
         // Return the library file path
         if File.NotExists tempLibPath then
             failwithf "Could not compile final assembly"
@@ -198,7 +198,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
     let buildAssembly (config : StaticParameters) (ns, ty) =
         // Process the source files and expand appropriate types
-        let newCode = processFiles config.Source config.References config.CompilerFlags
+        let newCode = processFiles config.Source config.References config.CompilerFlags config.CompilerTimeout
         // Build an assembly with some dummy info to make Visual Studio happy
         let providedAssembly = buildProvidedAssembly (ns, ty)
 
