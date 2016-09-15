@@ -289,6 +289,30 @@ type Test = Amazingant.FSharp.TypeExpansion.Expand<"SourceFile.fsx", WorkingDire
 ```
 
 
+Slow Templates
+--------------
+
+In some cases, when a template takes a long time to process, or there is an
+issue that causes the F# compiler to hang, the type provider may kick out an
+error message indicating that the `Compiler took longer than 60 seconds to run.`
+When this happens, the F# compiler instance being used by the type provider is
+killed, to prevent it from holding locks on files that it is using; in rare
+cases, the F# compiler can actually hold a lock on a referenced dll even after
+the file has been deleted, preventing tools like NuGet and Paket from running.
+
+If the 60-second duration is not long enough for the code being worked with, or
+if a shorter cutoff is desired, a different duration can be specified:
+
+```FSharp
+type Test = Amazingant.FSharp.TypeExpansion.Expand<"SourceFile.fsx", CompilerTimeout=120>
+```
+
+Note that the timeout value specified is in seconds, and should be a reasonably
+sized non-negative number. The provided value is multiplied by 1000 to convert
+it to milliseconds, and overflow is not handled; likewise, a negative number
+will cause `Process.WaitForExit` to throw an `ArgumentOutOfRange` exception.
+
+
 Known Issues
 ------------
 

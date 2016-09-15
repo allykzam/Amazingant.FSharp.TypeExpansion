@@ -1,3 +1,8 @@
+#### 0.7.0 - 2016-09-15
+* #12: Add new `CompilerTimeout` static parameter with 60-second default; if
+  fsc.exe runs longer than that during any single call to it, it will be killed
+  and an exception thrown.
+
 #### 0.6.0 - 2016-09-14
 * #11: Add new `WorkingDirectory` static parameter to help path issues when
   using the provider with multiple projects in a single solution
