@@ -98,7 +98,7 @@ module internal Compilation =
 
 
     let fscLocation = @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe"
-    let runFsc (args : string seq) =
+    let runFsc (args : string seq) (timeout : int) =
         use proc = new System.Diagnostics.Process()
         let si = System.Diagnostics.ProcessStartInfo(fscLocation)
         proc.StartInfo <- si
@@ -113,19 +113,29 @@ module internal Compilation =
             |> fun x -> String.Join(" ", x)
         if not <| proc.Start() then
             failwithf "Could not run fsc.exe"
-        proc.WaitForExit()
+        // If fsc takes longer than XX seconds to compile, assume something is
+        // wrong and kill it.
+        if not <| proc.WaitForExit(timeout * 1000) then
+            try
+                proc.Kill()
+            with
+            | _ -> ()
+            // Throw an error to the user so they know that fsc is taking a long
+            // time to compile.
+            failwithf "Compiler took longer than %i seconds to run? There may be a problem with the code being expanded." timeout
+        // If fsc finished in under 60 seconds, proceed!
         let err = proc.StandardError.ReadToEnd()
         if not <| String.IsNullOrWhiteSpace err then
             failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
-    let partialBuild (source : CompileSource) refs flags =
+    let partialBuild (source : CompileSource) refs flags fscTimeout =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
-        runFsc args
+        runFsc args fscTimeout
         if File.NotExists tempLibPath then
             failwithf "Could not compile source"
         else
@@ -147,8 +157,8 @@ module internal Compilation =
 
     // Processes the given source, passes types through expanders, and returns
     // the expanded source code
-    let processFiles source refs flags =
-        let asm = partialBuild source refs flags
+    let processFiles source refs flags fscTimeout =
+        let asm = partialBuild source refs flags fscTimeout
         // Get the types that can be expanded
         let targets =
             asm.DefinedTypes
