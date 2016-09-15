@@ -64,6 +64,7 @@ type internal StaticParameters =
         ExcludeFiles : string;
         Refs : string;
         Flags : string;
+        CompilerTimeout : int;
         OutputMode : OutputMode;
         OutputPath : string;
     }
@@ -299,9 +300,10 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                 let exc = f "ExcludeSource"    (Some ""                         ) "Source files to exclude from use; primarily used to exclude files that use this type provider when the main source is pointed to the project file"
                 let ref = f "References"       (Some ""                         ) "Any library references required by the source"
                 let flg = f "CompilerFlags"    (Some ""                         ) "Any special compiler flags that need to be passed to fsc.exe"
+                let tmo = f "CompilerTimeout"  (Some 60                         ) "How many seconds to wait for fsc to run when called. Note that fsc is called once for processing templates, and a second time if the output mode is set to any mode other than CreateSourceFile."
                 let pth = f "OutputPath"       (Some ""                         ) "The output path to use when OutputMode is set to CreateAssembly or CreateSourceFile"
                 let out = f "OutputMode"       (Some OutputMode.BuildIntoProject) "How the expanded source is to be presented for use"
-                [| src; cwd; exc; ref; flg; pth; out; |]
+                [| src; cwd; exc; ref; flg; tmo; pth; out; |]
             else
                 [| |]
 
@@ -312,13 +314,14 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
             let config =
                 {
-                      SourcePath = args.[0] :?> string;
-                      WorkingDir = args.[1] :?> string;
-                    ExcludeFiles = args.[2] :?> string;
-                            Refs = args.[3] :?> string;
-                           Flags = args.[4] :?> string;
-                      OutputPath = args.[5] :?> string;
-                      OutputMode = args.[6] :?> OutputMode;
+                         SourcePath = args.[0] :?> string;
+                         WorkingDir = args.[1] :?> string;
+                       ExcludeFiles = args.[2] :?> string;
+                               Refs = args.[3] :?> string;
+                              Flags = args.[4] :?> string;
+                    CompilerTimeout = args.[5] :?> int;
+                         OutputPath = args.[6] :?> string;
+                         OutputMode = args.[7] :?> OutputMode;
                 }
             let wd =
                 if System.String.IsNullOrWhiteSpace config.WorkingDir
