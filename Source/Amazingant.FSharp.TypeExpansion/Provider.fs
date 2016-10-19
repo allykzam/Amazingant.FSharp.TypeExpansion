@@ -160,12 +160,12 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
     // Create a dummy assembly and compile it; this will be returned to Visual
     // Studio when it asks for the contents of the "provided" assembly
-    let buildProvidedAssembly (ns, ty) =
+    let buildProvidedAssembly (ns, ty) (config : StaticParameters) =
         let providedCode = Path.ChangeExtension(Path.GetTempFileName(), ".dummy.fs")
         File.WriteAllText(providedCode, sprintf "namespace %s\ntype %s() =\n    member __.Dummy = true" ns ty)
         let providedPath = Path.ChangeExtension(providedCode, ".dummy.dll")
         let args = [| "--noframework"; "--target:library"; (sprintf "-o:%s" providedPath); providedCode |]
-        runFsc args
+        runFsc args config.CompilerTimeout
         if File.NotExists providedPath then
             failwithf "Could not compile dummy library for type provider"
         else
@@ -200,7 +200,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         // Process the source files and expand appropriate types
         let newCode = processFiles config.Source config.References config.CompilerFlags config.CompilerTimeout
         // Build an assembly with some dummy info to make Visual Studio happy
-        let providedAssembly = buildProvidedAssembly (ns, ty)
+        let providedAssembly = buildProvidedAssembly (ns, ty) config
 
         match config.OutputMode with
         // This is the only mode that returns a value for the actual assembly,
