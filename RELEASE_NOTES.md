@@ -1,3 +1,7 @@
+#### 0.7.2 - 2016-10-19
+* #15: Fix dummy library not building due to missing the compiler timeout
+  parameter
+
 #### 0.7.1 - 2016-10-19
 * #14: Add file path for F# compiler when running on 32-bit Windows
 
