@@ -97,7 +97,18 @@ module internal Compilation =
         ]
 
 
-    let fscLocation = @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe"
+    let fscLocation =
+        let paths =
+            [
+                @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
+                @"C:\Program Files\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
+            ]
+        paths
+        |> Seq.filter File.Exists
+        |> Seq.tryHead
+        |> function
+           | None -> failwithf "Cannot find F# compiler"
+           | Some x -> x
     let runFsc (args : string seq) (timeout : int) =
         use proc = new System.Diagnostics.Process()
         let si = System.Diagnostics.ProcessStartInfo(fscLocation)
