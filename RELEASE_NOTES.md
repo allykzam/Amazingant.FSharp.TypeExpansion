@@ -1,3 +1,6 @@
+#### 0.7.1 - 2016-10-19
+* #14: Add file path for F# compiler when running on 32-bit Windows
+
 #### 0.7.0 - 2016-09-15
 * #12: Add new `CompilerTimeout` static parameter with 60-second default; if
   fsc.exe runs longer than that during any single call to it, it will be killed
