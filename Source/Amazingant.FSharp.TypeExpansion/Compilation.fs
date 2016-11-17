@@ -144,7 +144,7 @@ module internal Compilation =
         si.RedirectStandardOutput <- true
         si.Arguments <- args
         if not <| proc.Start() then
-            failwithf "Could not run fsc.exe"
+            failwithf "Could not run fsc.exe or fsharpc"
         // If fsc takes longer than XX seconds to compile, assume something is
         // wrong and kill it.
         if not <| proc.WaitForExit(timeout * 1000) then
