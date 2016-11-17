@@ -125,18 +125,24 @@ module internal Compilation =
            | None -> failwithf "Cannot find F# compiler"
            | Some x -> x
     let runFsc (args : string seq) (timeout : int) =
+        let exePath, fscArg =
+            match System.Environment.OSVersion.Platform with
+            | System.PlatformID.Win32NT -> fscLocation, ""
+            | _ -> "mono", fscLocation
+        let args =
+            args
+            |> Seq.append [fscArg]
+            |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
+            |> fun x -> String.Join(" ", x)
         use proc = new System.Diagnostics.Process()
-        let si = System.Diagnostics.ProcessStartInfo(fscLocation)
+        let si = System.Diagnostics.ProcessStartInfo(exePath)
         proc.StartInfo <- si
         si.UseShellExecute <- false
         si.CreateNoWindow <- true
         si.RedirectStandardError <- true
         si.RedirectStandardInput <- true
         si.RedirectStandardOutput <- true
-        si.Arguments <-
-            args
-            |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
-            |> fun x -> String.Join(" ", x)
+        si.Arguments <- args
         if not <| proc.Start() then
             failwithf "Could not run fsc.exe"
         // If fsc takes longer than XX seconds to compile, assume something is
