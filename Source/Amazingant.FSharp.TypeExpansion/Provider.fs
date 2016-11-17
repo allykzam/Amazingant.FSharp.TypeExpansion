@@ -235,6 +235,81 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
         | _ -> failwithf "Invalid OutputMode specified"
 
+    // Applies the given static type arguments for the specified type
+    let applyStaticArguments ty (y : string []) (args : obj []) =
+        if ty <> typeof<Expand> then
+            failwithf "This provider cannot apply static type arguments to the type '%s'" ty.FullName
+
+        let config =
+            {
+                        SourcePath = args.[0] :?> string;
+                        WorkingDir = args.[1] :?> string;
+                      ExcludeFiles = args.[2] :?> string;
+                              Refs = args.[3] :?> string;
+                             Flags = args.[4] :?> string;
+                   CompilerTimeout = args.[5] :?> int;
+                        OutputPath = args.[6] :?> string;
+                        OutputMode = args.[7] :?> OutputMode;
+            }
+        let wd =
+            if System.String.IsNullOrWhiteSpace config.WorkingDir
+            then System.Environment.CurrentDirectory
+            elif not <| Path.IsPathRooted config.WorkingDir then
+                failwithf "System.IO.Path.IsPathRooted indicates that the provided working directory is not an absolute path:\n%s\nDid you mean to specify e.g. '(__SOURCE_DIRECTORY__)'?"
+                    config.WorkingDir
+            else config.WorkingDir
+        let config = { config with WorkingDir = wd }
+        // For either of the two modes that make output files, check the
+        // specified output path
+        match config.OutputMode with
+        | OutputMode.CreateAssembly ->
+            if not <| config.OutputPath.EndsWith ".dll" then
+                failwithf "Invalid (or no) output path specified. Path must end with '.dll'"
+        | OutputMode.CreateSourceFile ->
+            if config.OutputPath.EndsWith ".fs" then ()
+            elif config.OutputPath.EndsWith ".fsx" then ()
+            else
+                failwithf "Invalid (or no) output path specified. Path must end with '.fs' or '.fsx'"
+        | _ -> ()
+
+        // Go build if needed
+        if config.IsValid() then
+            lock state
+                (fun () ->
+                    // Cache the modified times for the source (accessing this
+                    // requires hitting the disk multiple times)
+                    let mt = config.SourceModifiedTimes
+                    let build =
+                        // Build if the state does not contain this config
+                        if not <| state.ContainsKey config then true
+                        else
+                            // If the state contains this config...
+                            let (x,_,_) = state.[config]
+                            // Generate a set from the old and new modified
+                            // times
+                            let x = x |> Set.ofList
+                            let y = mt |> Set.ofList
+                            // Build if the two sets have differing file counts
+                            x.Count <> y.Count ||
+                            // Or if the union of the two sets is not the same
+                            // size as either set
+                            (Set.intersect x y).Count <> x.Count
+                    // If any of the above says to build, then go build
+                    if build then
+                        let oldWD = Environment.CurrentDirectory
+                        try
+                            Environment.CurrentDirectory <- config.WorkingDir
+                            let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
+                            state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
+                            currentAssembly <- Some config
+                        finally
+                            Environment.CurrentDirectory <- oldWD
+                )
+        state.[config]
+        |> function (_,_,x) -> x
+        |> fun x -> x.GetType(ty.Namespace + "." + y.[y.Length - 1])
+
+
 
 
     do Environment.CurrentDirectory <- tpConfig.ResolutionFolder
@@ -308,79 +383,16 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
                 [| |]
 
         // Applies the given static type arguments for the specified type
-        member __.ApplyStaticArguments (ty, y, args) =
-            if ty <> typeof<Expand> then
-                failwithf "This provider cannot apply static type arguments to the type '%s'" ty.FullName
-
-            let config =
-                {
-                         SourcePath = args.[0] :?> string;
-                         WorkingDir = args.[1] :?> string;
-                       ExcludeFiles = args.[2] :?> string;
-                               Refs = args.[3] :?> string;
-                              Flags = args.[4] :?> string;
-                    CompilerTimeout = args.[5] :?> int;
-                         OutputPath = args.[6] :?> string;
-                         OutputMode = args.[7] :?> OutputMode;
-                }
-            let wd =
-                if System.String.IsNullOrWhiteSpace config.WorkingDir
-                then System.Environment.CurrentDirectory
-                elif not <| Path.IsPathRooted config.WorkingDir then
-                    failwithf "System.IO.Path.IsPathRooted indicates that the provided working directory is not an absolute path:\n%s\nDid you mean to specify e.g. '(__SOURCE_DIRECTORY__)'?"
-                        config.WorkingDir
-                else config.WorkingDir
-            let config = { config with WorkingDir = wd }
-            // For either of the two modes that make output files, check the
-            // specified output path
-            match config.OutputMode with
-            | OutputMode.CreateAssembly ->
-                if not <| config.OutputPath.EndsWith ".dll" then
-                    failwithf "Invalid (or no) output path specified. Path must end with '.dll'"
-            | OutputMode.CreateSourceFile ->
-                if config.OutputPath.EndsWith ".fs" then ()
-                elif config.OutputPath.EndsWith ".fsx" then ()
-                else
-                    failwithf "Invalid (or no) output path specified. Path must end with '.fs' or '.fsx'"
-            | _ -> ()
-
-            // Go build if needed
-            if config.IsValid() then
-                lock state
-                    (fun () ->
-                        // Cache the modified times for the source (accessing
-                        // this requires hitting the disk multiple times)
-                        let mt = config.SourceModifiedTimes
-                        let build =
-                            // Build if the state does not contain this config
-                            if not <| state.ContainsKey config then true
-                            else
-                                // If the state contains this config...
-                                let (x,_,_) = state.[config]
-                                // Generate a set from the old and new modified
-                                // times
-                                let x = x |> Set.ofList
-                                let y = mt |> Set.ofList
-                                // Build if the two sets have differing file
-                                // counts
-                                x.Count <> y.Count ||
-                                // Or if the union of the two sets is not the
-                                // same size as either set
-                                (Set.intersect x y).Count <> x.Count
-                        // If any of the above says to build, then go build
-                        if build then
-                            let oldWD = Environment.CurrentDirectory
-                            try
-                                Environment.CurrentDirectory <- config.WorkingDir
-                                let (file, file') = buildAssembly config (ty.Namespace, y.[y.Length - 1])
-                                state.[config]  <- (mt, (file |> Option.map Assembly.LoadFrom), (Assembly.LoadFrom file'))
-                                currentAssembly <- Some config
-                            finally
-                                Environment.CurrentDirectory <- oldWD
-                    )
-            state.[config]
-            |> function (_,_,x) -> x
-            |> fun x -> x.GetType(ty.Namespace + "." + y.[y.Length - 1])
+        member __.ApplyStaticArguments (t, y, a) =
+            try
+                applyStaticArguments t y a
+            with
+            | e ->
+                let rec getInner (e : exn) =
+                    match e.InnerException with
+                    | null -> sprintf "%s: %s" (e.GetType().FullName) e.Message
+                    | ie -> sprintf "%s: %s -- Inner Exception:\n%s" (e.GetType().FullName) e.Message (getInner ie)
+                failwith <| getInner e
 
 
     interface IDisposable with
