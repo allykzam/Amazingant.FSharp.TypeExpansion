@@ -72,12 +72,12 @@ type internal StaticParameters =
         let exc =
             if System.String.IsNullOrWhiteSpace x.ExcludeFiles
             then []
-            else (CompileSource (x.ExcludeFiles, [])).FilesAndRefs |> fst
+            else (CompileSource (x.ExcludeFiles, [], x.WorkingDir)).FilesAndRefs |> fst
         match x.OutputMode with
         | OutputMode.CreateSourceFile ->
-            CompileSource (x.SourcePath, x.OutputPath::exc)
+            CompileSource (x.SourcePath, x.OutputPath::exc, x.WorkingDir)
         | _ ->
-            CompileSource (x.SourcePath, exc)
+            CompileSource (x.SourcePath, exc, x.WorkingDir)
     member x.References = splitValues x.Refs
     member x.CompilerFlags = splitValues x.Flags
     member x.SourceModifiedTimes =
