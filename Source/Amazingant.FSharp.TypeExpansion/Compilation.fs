@@ -80,15 +80,24 @@ module internal Compilation =
     // assembly, and mscorlib. These base references are required for all of the
     // compiling done.
     let requiredRefs =
-        let fsCoreMain = @"C:\Program Files\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
-        let fsCorex86 = @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
+        let p = Path.GetDirectoryName
+        let paths =
+            [
+                // This backs out from the bin/Debug directory for this type
+                // provider, in case it is being used from there
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p |> p), "packages", "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
+                // Normal Windows locations; subject to change as different
+                // versions show up
+                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+            ]
         let fsCore =
-            if File.Exists fsCoreMain then
-                fsCoreMain
-            elif File.Exists fsCorex86 then
-                fsCorex86
-            else
-                failwithf "Version 4.0 of F# does not appear to be installed on this system"
+            paths
+            |> Seq.filter File.Exists
+            |> Seq.tryHead
+            |> function
+               | None -> failwithf "Cannot find FSharp.Core for F# 4.0"
+               | Some x -> x
         [
             typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
             typeof<CompileSource>.Assembly.Location;
