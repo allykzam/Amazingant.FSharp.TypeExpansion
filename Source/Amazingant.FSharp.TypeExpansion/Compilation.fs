@@ -32,16 +32,20 @@ module internal Compilation =
 
 
     // Helper type for processing the user-specified source path
-    type internal CompileSource (path : string, omitFiles : string list) =
+    type internal CompileSource (path : string, omitFiles : string list, targetDirectory : string) =
         static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
+        let rootPath x =
+            if Path.IsPathRooted x
+            then x
+            else Path.Combine(targetDirectory, x)
         let (|Project|List|File|) (file : string) =
             let isProj = file.EndsWith ".fsproj"
             let isList = file.Contains "," || file.Contains "\n" || file.Contains "\r"
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
-            | false, false,  true -> File file
+            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not) |> List.map rootPath)
+            | false, false,  true -> File (rootPath file)
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
 
@@ -64,6 +68,7 @@ module internal Compilation =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Compile"))
                                 |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
                                 |> Seq.filter (fun x -> omitFiles |> Seq.contains x |> not)
+                                |> Seq.map rootPath
                                 |> Seq.toList
                             let refs =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Reference"))
