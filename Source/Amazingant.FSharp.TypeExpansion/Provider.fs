@@ -160,7 +160,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         File.WriteAllText(providedCode, sprintf "namespace %s\ntype %s() =\n    member __.Dummy = true" ns ty)
         let providedPath = Path.ChangeExtension(providedCode, ".dummy.dll")
         let args = [| "--noframework"; "--target:library"; (sprintf "-o:%s" providedPath); providedCode |]
-        runFsc args config.CompilerTimeout
+        runFsc args config.CompilerTimeout config.WorkingDir
         if File.NotExists providedPath then
             failwithf "Could not compile dummy library for type provider"
         else
@@ -183,7 +183,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         // Group everything together with the source files
         let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
         // Compile!
-        runFsc args config.CompilerTimeout
+        runFsc args config.CompilerTimeout config.WorkingDir
         // Return the library file path
         if File.NotExists tempLibPath then
             failwithf "Could not compile final assembly"
@@ -193,7 +193,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
 
     let buildAssembly (config : StaticParameters) (ns, ty) =
         // Process the source files and expand appropriate types
-        let newCode = processFiles config.Source config.References config.CompilerFlags config.CompilerTimeout
+        let newCode = processFiles config.Source config.References config.CompilerFlags config.CompilerTimeout config.WorkingDir
         // Build an assembly with some dummy info to make Visual Studio happy
         let providedAssembly = buildProvidedAssembly (ns, ty) config
 

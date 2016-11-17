@@ -129,7 +129,7 @@ module internal Compilation =
         |> function
            | None -> failwithf "Cannot find F# compiler"
            | Some x -> x
-    let runFsc (args : string seq) (timeout : int) =
+    let runFsc (args : string seq) (timeout : int) (workingDir : string) =
         let exePath, fscArg =
             match System.Environment.OSVersion.Platform with
             | System.PlatformID.Win32NT -> fscLocation, ""
@@ -142,6 +142,7 @@ module internal Compilation =
         use proc = new System.Diagnostics.Process()
         let si = System.Diagnostics.ProcessStartInfo(exePath)
         proc.StartInfo <- si
+        si.WorkingDirectory <- workingDir
         si.UseShellExecute <- false
         si.CreateNoWindow <- true
         si.RedirectStandardError <- true
@@ -166,13 +167,13 @@ module internal Compilation =
             failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
-    let partialBuild (source : CompileSource) refs flags fscTimeout =
+    let partialBuild (source : CompileSource) refs flags fscTimeout workingDir =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
-        runFsc args fscTimeout
+        runFsc args fscTimeout workingDir
         if File.NotExists tempLibPath then
             failwithf "Could not compile source"
         else
@@ -194,8 +195,8 @@ module internal Compilation =
 
     // Processes the given source, passes types through expanders, and returns
     // the expanded source code
-    let processFiles source refs flags fscTimeout =
-        let asm = partialBuild source refs flags fscTimeout
+    let processFiles source refs flags fscTimeout workingDir =
+        let asm = partialBuild source refs flags fscTimeout workingDir
         // Get the types that can be expanded
         let targets =
             asm.DefinedTypes
