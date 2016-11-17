@@ -84,22 +84,17 @@ type internal StaticParameters =
         fst x.Source.FilesAndRefs
         |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
     member x.IsValid () =
-        let oldWD = Environment.CurrentDirectory
-        try
-            Environment.CurrentDirectory <- x.WorkingDir
-            let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
-            // If any files are missing, throw an exception that indicates the
-            // current path; this will allow the user to determine how to fix
-            // any relative paths that they specified
-            match missingFiles.Trim() with
-            | null | "" -> ()
-            | xs ->
-                failwithf "Specified file(s) do not exist; paths are relative to:\n%s\nIf this does not appear right, try setting the WorkingDirectory parameter?\n\n%s\n"
-                    x.WorkingDir
-                    xs
-            true
-        finally
-            Environment.CurrentDirectory <- oldWD
+        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
+        // If any files are missing, throw an exception that indicates the
+        // current path; this will allow the user to determine how to fix
+        // any relative paths that they specified
+        match missingFiles.Trim() with
+        | null | "" -> ()
+        | xs ->
+            failwithf "Specified file(s) do not exist; paths are relative to:\n%s\nIf this does not appear right, try setting the WorkingDirectory parameter?\n\n%s\n"
+                x.WorkingDir
+                xs
+        true
 
 type Expand () = inherit obj()
 
