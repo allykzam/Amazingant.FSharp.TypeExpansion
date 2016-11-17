@@ -109,8 +109,14 @@ module internal Compilation =
     let fscLocation =
         let paths =
             [
-                @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
-                @"C:\Program Files\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
+                // Normal Windows locations; subject to change as different
+                // versions show up
+                "C:/Program Files (x86)/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                "C:/Program Files/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                // Found this copy after installing Visual Studio for Mac
+                "/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5/fsc.exe";
+                // Installs here on macOS via homebrew
+                "/usr/local/bin/fsharpc";
             ]
         paths
         |> Seq.filter File.Exists
