@@ -2,4 +2,5 @@ FRAMEWORK: NET45
 NUGET
   remote: http://api.nuget.org/v3/index.json
     FAKE (4.38.1)
+    FSharp.Core (4.0.0.1)
     SourceLink.Fake (1.1)
