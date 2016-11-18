@@ -3,22 +3,22 @@ Type-Expansion
 
 This library is a code generator, which uses a template-driven system to
 "expand" types. The types that need to be expanded -- as well as the functions
-that perform the expansions -- are user-provided. That is, this provider does
-not come with any templates enabled.
+that perform the expansions -- are user-provided. There are some working
+templates in a separate project [here][templates-proj] as examples.
 
 This expansion system allows creating short and simple type definitions with a
 single complex template, with larger resulting types that contain additional
 behavior.
 
 For some working examples, please take a look at the accompanying
-[templates][templates-proj] project, which includes some real-world samples that
-are being used for real-world code.
+[templates][templates-proj] project, which includes templates that are actively
+used in real-world code.
 
 
 Examples
 --------
 
-In the following code, a simple record type is defined and marked with the
+In the following snippet, a simple record type is defined and marked with the
 `ExpandableType` attribute. Due to the particular template that will be applied,
 the simple type includes a static property named `DefaultValue` which provides,
 as its name implies, a default value.
