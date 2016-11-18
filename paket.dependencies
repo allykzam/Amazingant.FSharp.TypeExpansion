@@ -3,4 +3,5 @@ cache ./nupkgs versions: current
 
 source https://api.nuget.org/v3/index.json
 nuget FAKE 4.38.1
+nuget FSharp.Core 4.0.0.1
 nuget SourceLink.Fake 1.1

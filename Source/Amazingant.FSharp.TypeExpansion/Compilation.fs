@@ -32,16 +32,20 @@ module internal Compilation =
 
 
     // Helper type for processing the user-specified source path
-    type internal CompileSource (path : string, omitFiles : string list) =
+    type internal CompileSource (path : string, omitFiles : string list, targetDirectory : string) =
         static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
+        let rootPath x =
+            if Path.IsPathRooted x
+            then x
+            else Path.Combine(targetDirectory, x)
         let (|Project|List|File|) (file : string) =
             let isProj = file.EndsWith ".fsproj"
             let isList = file.Contains "," || file.Contains "\n" || file.Contains "\r"
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not))
-            | false, false,  true -> File file
+            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not) |> List.map rootPath)
+            | false, false,  true -> File (rootPath file)
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
 
@@ -64,6 +68,7 @@ module internal Compilation =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Compile"))
                                 |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
                                 |> Seq.filter (fun x -> omitFiles |> Seq.contains x |> not)
+                                |> Seq.map rootPath
                                 |> Seq.toList
                             let refs =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Reference"))
@@ -80,15 +85,30 @@ module internal Compilation =
     // assembly, and mscorlib. These base references are required for all of the
     // compiling done.
     let requiredRefs =
-        let fsCoreMain = @"C:\Program Files\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
-        let fsCorex86 = @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll"
+        let p = Path.GetDirectoryName
+        let paths =
+            [
+                // This backs out from the bin/Debug directory for this type
+                // provider, in case it is being used from there
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p |> p), "packages", "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
+                // This one should work if both this type provider and
+                // FSharp.Core were installed by Paket
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
+                // This one should work if both this type provider and
+                // FSharp.Core were installed by NuGet
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.0.0.1", "lib", "net40", "FSharp.Core.dll");
+                // Normal Windows locations; subject to change as different
+                // versions show up
+                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+            ]
         let fsCore =
-            if File.Exists fsCoreMain then
-                fsCoreMain
-            elif File.Exists fsCorex86 then
-                fsCorex86
-            else
-                failwithf "Version 4.0 of F# does not appear to be installed on this system"
+            paths
+            |> Seq.filter File.Exists
+            |> Seq.tryHead
+            |> function
+               | None -> failwithf "Cannot find FSharp.Core for F# 4.0"
+               | Some x -> x
         [
             typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
             typeof<CompileSource>.Assembly.Location;
@@ -100,8 +120,14 @@ module internal Compilation =
     let fscLocation =
         let paths =
             [
-                @"C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
-                @"C:\Program Files\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe";
+                // Normal Windows locations; subject to change as different
+                // versions show up
+                "C:/Program Files (x86)/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                "C:/Program Files/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                // Found this copy after installing Visual Studio for Mac
+                "/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5/fsc.exe";
+                // Installs here on macOS via homebrew
+                "/usr/local/bin/fsharpc";
             ]
         paths
         |> Seq.filter File.Exists
@@ -109,21 +135,28 @@ module internal Compilation =
         |> function
            | None -> failwithf "Cannot find F# compiler"
            | Some x -> x
-    let runFsc (args : string seq) (timeout : int) =
+    let runFsc (args : string seq) (timeout : int) (workingDir : string) =
+        let exePath, fscArg =
+            match System.Environment.OSVersion.Platform with
+            | System.PlatformID.Win32NT -> fscLocation, ""
+            | _ -> "mono", fscLocation
+        let args =
+            args
+            |> Seq.append [fscArg]
+            |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
+            |> fun x -> String.Join(" ", x)
         use proc = new System.Diagnostics.Process()
-        let si = System.Diagnostics.ProcessStartInfo(fscLocation)
+        let si = System.Diagnostics.ProcessStartInfo(exePath)
         proc.StartInfo <- si
+        si.WorkingDirectory <- workingDir
         si.UseShellExecute <- false
         si.CreateNoWindow <- true
         si.RedirectStandardError <- true
         si.RedirectStandardInput <- true
         si.RedirectStandardOutput <- true
-        si.Arguments <-
-            args
-            |> Seq.map (fun x -> if x.Contains(" ") then sprintf "\"%s\"" x else x)
-            |> fun x -> String.Join(" ", x)
+        si.Arguments <- args
         if not <| proc.Start() then
-            failwithf "Could not run fsc.exe"
+            failwithf "Could not run fsc.exe or fsharpc"
         // If fsc takes longer than XX seconds to compile, assume something is
         // wrong and kill it.
         if not <| proc.WaitForExit(timeout * 1000) then
@@ -140,13 +173,13 @@ module internal Compilation =
             failwithf "Compiler error:\n\n%s" (err.Replace("\r", ""))
 
 
-    let partialBuild (source : CompileSource) refs flags fscTimeout =
+    let partialBuild (source : CompileSource) refs flags fscTimeout workingDir =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
         let (files, extraRefs) = source.FilesAndRefs
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
-        runFsc args fscTimeout
+        runFsc args fscTimeout workingDir
         if File.NotExists tempLibPath then
             failwithf "Could not compile source"
         else
@@ -168,8 +201,8 @@ module internal Compilation =
 
     // Processes the given source, passes types through expanders, and returns
     // the expanded source code
-    let processFiles source refs flags fscTimeout =
-        let asm = partialBuild source refs flags fscTimeout
+    let processFiles source refs flags fscTimeout workingDir =
+        let asm = partialBuild source refs flags fscTimeout workingDir
         // Get the types that can be expanded
         let targets =
             asm.DefinedTypes

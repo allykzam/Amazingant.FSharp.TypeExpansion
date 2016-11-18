@@ -344,8 +344,12 @@ some points worth mentioning.
   library was built to help streamline the process of writing code that writes
   code, so it may be helpful.
 
-* The paths for `FSharp.Core` and `fsc.exe` are hard-coded, so the type provider
-  currently only works on 64-bit Windows systems.
+* I do not have any Linux or BSD systems with F# installed on them to test with,
+  aside from the macOS system provided by my employer. I have tried to add path
+  detection for `FSharp.Core` and `fsc.exe` (or `fsharpc`) that works, but have
+  no real way to verify this code. If this type provider indicates that it
+  cannot find either of these and you know where they are on your system,
+  consider opening an issue and letting me know their paths.
 
 
 License
