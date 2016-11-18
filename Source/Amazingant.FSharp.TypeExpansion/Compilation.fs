@@ -91,6 +91,12 @@ module internal Compilation =
                 // This backs out from the bin/Debug directory for this type
                 // provider, in case it is being used from there
                 Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p |> p), "packages", "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
+                // This one should work if both this type provider and
+                // FSharp.Core were installed by Paket
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
+                // This one should work if both this type provider and
+                // FSharp.Core were installed by NuGet
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.0.0.1", "lib", "net40", "FSharp.Core.dll");
                 // Normal Windows locations; subject to change as different
                 // versions show up
                 "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
