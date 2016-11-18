@@ -1,3 +1,11 @@
+#### 0.7.3 - 2016-11-18
+* #16: Add support for running type provider on macOS systems with Visual Studio
+  for Mac by adding better detection of FSharp.Core and fsc/fsharpc
+* When running on a non-Windows platform, attempt to use mono to run fsc/fsharpc
+* Adjust target working directory handling to not fidget with the current
+  working directory for the type provider; now adjusting file paths and
+  indicating the desired working directory when invoking fsc/fsharpc
+
 #### 0.7.2 - 2016-10-19
 * #15: Fix dummy library not building due to missing the compiler timeout
   parameter
