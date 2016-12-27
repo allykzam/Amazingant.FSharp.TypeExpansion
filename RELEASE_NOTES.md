@@ -1,3 +1,8 @@
+#### 0.8.0 - 2016-12-27
+* #17: When the output mode is set to `CreateSourceFile`, the generated source
+  now contains an `#if INTERACTIVE` block with `#load` and `#r` directives to
+  ensure that the generated source can be used without modification
+
 #### 0.7.3 - 2016-11-18
 * #16: Add support for running type provider on macOS systems with Visual Studio
   for Mac by adding better detection of FSharp.Core and fsc/fsharpc
