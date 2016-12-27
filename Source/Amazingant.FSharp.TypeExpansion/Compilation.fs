@@ -34,23 +34,23 @@ module internal Compilation =
     // Helper type for processing the user-specified source path
     type internal CompileSource (path : string, omitFiles : string list, targetDirectory : string) =
         static let projFiles = Dictionary<string, (DateTime * (string list * string list))>()
-        let rootPath x =
-            if Path.IsPathRooted x
-            then x
+        let rootPath rooted x =
+            if Path.IsPathRooted x then x
+            elif not rooted then x
             else Path.Combine(targetDirectory, x)
-        let (|Project|List|File|) (file : string) =
+        let (|Project|List|File|) (skipRoot, file : string) =
             let isProj = file.EndsWith ".fsproj"
             let isList = file.Contains "," || file.Contains "\n" || file.Contains "\r"
             let isFile = (not <| file.Contains ",") && (file.EndsWith ".fsx" || file.EndsWith ".fs")
             match isProj, isList, isFile with
             |  true, false, false -> Project file
-            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not) |> List.map rootPath)
-            | false, false,  true -> File (rootPath file)
+            | false,  true, false -> List (splitValues file |> List.filter (fun x -> omitFiles |> Seq.contains x |> not) |> List.map (rootPath skipRoot))
+            | false, false,  true -> File (rootPath skipRoot file)
             | _ ->
                 failwithf "Provided source path does not appear to be valid; should be a project file, a source file, or a comma-separated list of paths"
 
-        member __.FilesAndRefs : (string list * string list) =
-            match path with
+        member __.FilesAndRefs(rooted) : (string list * string list) =
+            match (rooted, path) with
             | File x -> ([x], [])
             | List xs -> (xs, [])
             | Project x ->
@@ -68,7 +68,7 @@ module internal Compilation =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Compile"))
                                 |> Seq.map (fun x -> x.Attributes.["Include"].InnerText)
                                 |> Seq.filter (fun x -> omitFiles |> Seq.contains x |> not)
-                                |> Seq.map rootPath
+                                |> Seq.map (rootPath rooted)
                                 |> Seq.toList
                             let refs =
                                 System.Linq.Enumerable.Cast<XmlNode> (doc.GetElementsByTagName("Reference"))
@@ -78,6 +78,8 @@ module internal Compilation =
                             projFiles.[x] <- (modTime, (files, refs))
                             files, refs
                     )
+
+        member this.FilesAndRefs() = this.FilesAndRefs true
 
 
     // This finds a copy of FSharp.Core that has the required optdata and
@@ -176,7 +178,7 @@ module internal Compilation =
     let partialBuild (source : CompileSource) refs flags fscTimeout workingDir =
         let tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
         let args = [ "--noframework"; "-a"; sprintf "-o:%s" tempLibPath; "--target:library"; "--debug" ]
-        let (files, extraRefs) = source.FilesAndRefs
+        let (files, extraRefs) = source.FilesAndRefs()
         let refs = buildRefs (requiredRefs @ refs @ extraRefs)
         let args = args @ refs @ files @ flags |> Seq.toArray
         runFsc args fscTimeout workingDir
