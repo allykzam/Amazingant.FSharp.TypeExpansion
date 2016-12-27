@@ -72,7 +72,7 @@ type internal StaticParameters =
         let exc =
             if System.String.IsNullOrWhiteSpace x.ExcludeFiles
             then []
-            else (CompileSource (x.ExcludeFiles, [], x.WorkingDir)).FilesAndRefs |> fst
+            else ((CompileSource (x.ExcludeFiles, [], x.WorkingDir)).FilesAndRefs()) |> fst
         match x.OutputMode with
         | OutputMode.CreateSourceFile ->
             CompileSource (x.SourcePath, x.OutputPath::exc, x.WorkingDir)
@@ -81,10 +81,10 @@ type internal StaticParameters =
     member x.References = splitValues x.Refs
     member x.CompilerFlags = splitValues x.Flags
     member x.SourceModifiedTimes =
-        fst x.Source.FilesAndRefs
+        fst (x.Source.FilesAndRefs())
         |> List.map (fun x -> x, File.GetLastWriteTimeUtc x)
     member x.IsValid () =
-        let missingFiles = x.Source.FilesAndRefs |> fst |> Seq.filter File.NotExists |> joinLines
+        let missingFiles = (x.Source.FilesAndRefs()) |> fst |> Seq.filter File.NotExists |> joinLines
         // If any files are missing, throw an exception that indicates the
         // current path; this will allow the user to determine how to fix
         // any relative paths that they specified
@@ -177,7 +177,7 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         File.WriteAllText(tempCodePath, newCode)
         // Base compiler flags needed
         let baseArgs = [ "--noframework"; "--target:library"; ]
-        let (files, refs) = config.Source.FilesAndRefs
+        let (files, refs) = config.Source.FilesAndRefs()
         // Library references
         let refs = buildRefs (requiredRefs @ config.References @ refs)
         // Group everything together with the source files
