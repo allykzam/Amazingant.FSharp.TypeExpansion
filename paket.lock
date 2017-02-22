@@ -1,6 +1,8 @@
 FRAMEWORK: NET45
 NUGET
-  remote: http://api.nuget.org/v3/index.json
+  remote: https://api.nuget.org/v3/index.json
     FAKE (4.38.1)
-    FSharp.Core (4.0.0.1)
+    FSharp.Core (4.1)
+      System.ValueTuple (>= 4.3)
     SourceLink.Fake (1.1)
+    System.ValueTuple (4.3)
