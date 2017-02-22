@@ -98,18 +98,18 @@ module internal Compilation =
                 Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
                 // This one should work if both this type provider and
                 // FSharp.Core were installed by NuGet
-                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.0.0.1", "lib", "net40", "FSharp.Core.dll");
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.1.0", "lib", "net40", "FSharp.Core.dll");
                 // Normal Windows locations; subject to change as different
                 // versions show up
-                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
-                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.1.0/FSharp.Core.dll";
+                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.1.0/FSharp.Core.dll";
             ]
         let fsCore =
             paths
             |> Seq.filter File.Exists
             |> Seq.tryHead
             |> function
-               | None -> failwithf "Cannot find FSharp.Core for F# 4.0"
+               | None -> failwithf "Cannot find FSharp.Core for F# 4.1"
                | Some x -> x
         [
             typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
@@ -124,8 +124,8 @@ module internal Compilation =
             [
                 // Normal Windows locations; subject to change as different
                 // versions show up
-                "C:/Program Files (x86)/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
-                "C:/Program Files/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                "C:/Program Files (x86)/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
+                "C:/Program Files/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
                 // Found this copy after installing Visual Studio for Mac
                 "/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5/fsc.exe";
                 // Installs here on macOS via homebrew
@@ -135,7 +135,7 @@ module internal Compilation =
         |> Seq.filter File.Exists
         |> Seq.tryHead
         |> function
-           | None -> failwithf "Cannot find F# compiler"
+           | None -> failwithf "Cannot find F# 4.1 compiler"
            | Some x -> x
     let runFsc (args : string seq) (timeout : int) (workingDir : string) =
         let exePath, fscArg =
