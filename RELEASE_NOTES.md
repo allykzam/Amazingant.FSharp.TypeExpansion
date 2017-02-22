@@ -1,3 +1,11 @@
+#### 1.0.0 - 2016-02-22
+* No major feature changes for this release, but the referenced version of
+  `FSharp.Core` has changed. This is likely to be a breaking change for
+  consumers of this type provider, hence the version bump.
+* #19: Update `FSharp.Core` paket reference to 4.1.0
+* #18: Update detection and use of `FSharp.Core` and `fsc.exe` to look in the
+  appropriate paths for F# 4.1 as installed by Visual Studio 2017
+
 #### 0.8.0 - 2016-12-27
 * #17: When the output mode is set to `CreateSourceFile`, the generated source
   now contains an `#if INTERACTIVE` block with `#load` and `#r` directives to
