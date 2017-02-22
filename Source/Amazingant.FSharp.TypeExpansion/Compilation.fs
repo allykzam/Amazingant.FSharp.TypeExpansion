@@ -98,18 +98,18 @@ module internal Compilation =
                 Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
                 // This one should work if both this type provider and
                 // FSharp.Core were installed by NuGet
-                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.0.0.1", "lib", "net40", "FSharp.Core.dll");
+                Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p), "FSharp.Core.4.1.0", "lib", "net40", "FSharp.Core.dll");
                 // Normal Windows locations; subject to change as different
                 // versions show up
-                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
-                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.0.0/FSharp.Core.dll";
+                "C:/Program Files (x86)/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.1.0/FSharp.Core.dll";
+                "C:/Program Files/Reference Assemblies/Microsoft/FSharp/.NETFramework/v4.0/4.4.1.0/FSharp.Core.dll";
             ]
         let fsCore =
             paths
             |> Seq.filter File.Exists
             |> Seq.tryHead
             |> function
-               | None -> failwithf "Cannot find FSharp.Core for F# 4.0"
+               | None -> failwithf "Cannot find FSharp.Core for F# 4.1"
                | Some x -> x
         [
             typeof<Attributes.ExpandableTypeAttribute>.Assembly.Location;
