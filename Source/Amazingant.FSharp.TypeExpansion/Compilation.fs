@@ -124,8 +124,8 @@ module internal Compilation =
             [
                 // Normal Windows locations; subject to change as different
                 // versions show up
-                "C:/Program Files (x86)/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
-                "C:/Program Files/Microsoft SDKs/F#/4.0/Framework/v4.0/fsc.exe";
+                "C:/Program Files (x86)/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
+                "C:/Program Files/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
                 // Found this copy after installing Visual Studio for Mac
                 "/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5/fsc.exe";
                 // Installs here on macOS via homebrew
@@ -135,7 +135,7 @@ module internal Compilation =
         |> Seq.filter File.Exists
         |> Seq.tryHead
         |> function
-           | None -> failwithf "Cannot find F# compiler"
+           | None -> failwithf "Cannot find F# 4.1 compiler"
            | Some x -> x
     let runFsc (args : string seq) (timeout : int) (workingDir : string) =
         let exePath, fscArg =
