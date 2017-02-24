@@ -1,3 +1,7 @@
+#### 1.0.2 - 2017-02-24
+* Fix the Attributes project referencing FSharp.Core 4.4.0.0, rather than using
+  the paket-managed reference
+
 #### 1.0.1 - 2017-02-24
 * Pass the `--nocopyfsharpcore` parameter to `fsc` to prevent compile errors
   when `fsc` attempts to put our copy of `FSharp.Core.dll` into `%TEMP%`
