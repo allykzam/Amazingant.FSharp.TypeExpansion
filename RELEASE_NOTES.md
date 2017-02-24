@@ -1,4 +1,8 @@
-#### 1.0.0 - 2016-02-22
+#### 1.0.1 - 2017-02-24
+* Pass the `--nocopyfsharpcore` parameter to `fsc` to prevent compile errors
+  when `fsc` attempts to put our copy of `FSharp.Core.dll` into `%TEMP%`
+
+#### 1.0.0 - 2017-02-22
 * No major feature changes for this release, but the referenced version of
   `FSharp.Core` has changed. This is likely to be a breaking change for
   consumers of this type provider, hence the version bump.
