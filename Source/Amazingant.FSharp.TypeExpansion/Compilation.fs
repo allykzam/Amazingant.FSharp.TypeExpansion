@@ -124,6 +124,9 @@ module internal Compilation =
             [
                 // Normal Windows locations; subject to change as different
                 // versions show up
+                @"c:\program files (x86)\microsoft visual studio\2019\community\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
+                @"c:\program files (x86)\microsoft visual studio\2019\professional\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
+                @"c:\program files (x86)\microsoft visual studio\2019\enterprise\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
                 "C:/Program Files (x86)/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
                 "C:/Program Files/Microsoft SDKs/F#/4.1/Framework/v4.0/fsc.exe";
                 // Found this copy after installing Visual Studio for Mac
