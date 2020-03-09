@@ -172,16 +172,21 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
     let buildFinalAssembly (config : StaticParameters) (newCode : string) =
         // Get temp file paths, then write the expanded source so it can be
         // compiled
-        let tempCodePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
         let  tempLibPath = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
-        File.WriteAllText(tempCodePath, newCode)
+        let tempCodePaths =
+            match System.String.IsNullOrWhiteSpace newCode with
+            | false ->
+                let tempCodePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+                File.WriteAllText(tempCodePath, newCode)
+                [tempCodePath]
+            | true  -> []
         // Base compiler flags needed
         let baseArgs = [ "--noframework"; "--nocopyfsharpcore"; "--target:library"; "-r"; "netstandard"; ]
         let (files, refs) = config.Source.FilesAndRefs()
         // Library references
         let refs = buildRefs (requiredRefs @ config.References @ refs)
         // Group everything together with the source files
-        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; [tempCodePath]; config.CompilerFlags] |> Seq.toArray
+        let args = Seq.concat [baseArgs; [sprintf "-o:%s" tempLibPath;]; refs; files; tempCodePaths; config.CompilerFlags] |> Seq.toArray
         // Compile!
         runFsc args config.CompilerTimeout config.WorkingDir
         // Return the library file path
