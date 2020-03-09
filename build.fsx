@@ -19,6 +19,23 @@ let GitHubRepo = "Amazingant.FSharp.TypeExpansion"
 
 
 
+do
+    // Try to find Visual Studio 2019 in this location for one of the different
+    // editions, and set FAKE to use that version's MSBuild.
+    let f = sprintf @"C:\Program Files (x86)\Microsoft Visual Studio\2019\%s\MSBuild\Current\Bin"
+    [
+        f "Community";
+        f "Professional";
+        f "Enterprise";
+    ]
+    |> Seq.filter System.IO.Directory.Exists
+    |> Seq.take 1
+    |> Seq.iter
+        (fun x ->
+            setBuildParam "MSBuild" x
+        )
+
+
 
 let buildCopyrightText (now : System.DateTime) =
     let startYear = CopyrightYearStart
