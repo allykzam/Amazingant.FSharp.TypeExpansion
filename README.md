@@ -344,18 +344,28 @@ some points worth mentioning.
   library was built to help streamline the process of writing code that writes
   code, so it may be helpful.
 
-* I do not have any Linux or BSD systems with F# installed on them to test with,
-  aside from the macOS system provided by my employer. I have tried to add path
-  detection for `FSharp.Core` and `fsc.exe` (or `fsharpc`) that works, but have
-  no real way to verify this code. If this type provider indicates that it
-  cannot find either of these and you know where they are on your system,
-  consider opening an issue and letting me know their paths.
+* The file paths used to detect the F# compiler are rather specific to locations
+  I have found to work. If this type provider indicates that it cannot find the
+  compiler and you know where it is on your system, consider opening an issue
+  and letting me know the path.
+
+
+Breaking Changes
+----------------
+
+Version `2.0` of this library changes the target .NET Framework runtime for the
+type provider assembly from `4.5` to `4.7`, and changes the attributes assembly
+to target .NET Standard version `2.0`. This combination should work with any
+consuming project which targets .NET Framework `4.7` or higher, and .NET Core
+version `2.0` or higher. Additionally, the assemblies have been built to use
+version `4.7` of `FSharp.Core`, although versions as low as `4.1` should be
+usable with the appropriate binding redirects.
 
 
 License
 -------
 
-This project is Copyright © 2016 Anthony Perez a.k.a. amazingant, and is
+This project is Copyright © 2016-2020 Anthony Perez a.k.a. amazingant, and is
 licensed under the MIT license. See the [LICENSE file][license] for more
 details.
 
