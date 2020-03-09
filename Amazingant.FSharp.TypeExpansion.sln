@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{C6C5F6CA-5FA8-43DB-AFB4-940F16967C50}"
 	ProjectSection(SolutionItems) = preProject
@@ -8,7 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{C6C5F6
 		paket.lock = paket.lock
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Amazingant.FSharp.TypeExpansion", "Source\Amazingant.FSharp.TypeExpansion\Amazingant.FSharp.TypeExpansion.fsproj", "{B29F3323-57E6-4358-BD02-FE5E447BC925}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Amazingant.FSharp.TypeExpansion", "Source\Amazingant.FSharp.TypeExpansion\Amazingant.FSharp.TypeExpansion.fsproj", "{B29F3323-57E6-4358-BD02-FE5E447BC925}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9ED215B9-E259-4B5C-AAC4-ECE8CF1D896C}"
 	ProjectSection(SolutionItems) = preProject
@@ -39,5 +39,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9C585147-02FA-4B4F-8657-F1ED54578616}
 	EndGlobalSection
 EndGlobal
