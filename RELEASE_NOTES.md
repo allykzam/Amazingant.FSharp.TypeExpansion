@@ -1,3 +1,13 @@
+#### 2.0.0 - 2020-03-09
+* #21: Update the Attributes project to target .NET Standard 2.0, and update the
+  type provider to target .NET Framework 4.7. These changes enable use of the
+  type provider in projects that target .NET Core.
+* Use the Visual Studio 2019 version of the F# compiler internally during code
+  generation.
+* Update project files to use the newer SDK style.
+* #20: Fix errors with temporary file paths being shown when active type
+  expansion templates do not produce any output.
+
 #### 1.0.3 - 2017-02-24
 * Fix both project files using normal references to FSharp.Core
 
