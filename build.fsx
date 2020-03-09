@@ -1,5 +1,4 @@
 #r "packages/build/FAKE/tools/FakeLib.dll"
-#load "packages/build/SourceLink.Fake/tools/Fake.fsx"
 
 open Fake
 open Fake.Git
@@ -7,7 +6,6 @@ open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
 open System
 open System.IO
-open SourceLink
 
 
 
@@ -116,21 +114,6 @@ Target "Build" (fun _ ->
 )
 
 
-Target "SourceLink" (fun _ ->
-    if Pdbstr.tryFind().IsNone then invalidOp "pdbstr.exe could not be found on the local system"
-    let url =
-        sprintf "https://raw.githubusercontent.com/%s/%s/{0}/%%var2%%"
-            GitHubUser
-            GitHubRepo
-    !! "Source/**/*.??proj"
-    |> Seq.iter
-        (fun x ->
-            let project = SourceLink.VsBuild.VsProj.Load x [("Configuration", buildConfig)]
-            SourceLink.Index project.CompilesNotLinked project.OutputFilePdb __SOURCE_DIRECTORY__ url
-        )
-)
-
-
 Target "Package" (fun _ ->
     !! "Source/**/*.??proj"
     |> Seq.iter
@@ -176,13 +159,8 @@ Target "Release" DoNothing
     ==> "Release"
 
 
-// This all copied verbatim from another project that has good reason to arrange
-// them this way?
-"CommitAndTag" ==> "SourceLink"
-"SourceLink" ==> "Release"
-"SourceLink" ?=> "Package"
+"CommitAndTag" ==> "Release"
 "CopyBinaries" ==> "Package"
-"SourceLink" ?=> "CopyBinaries"
 
 
 RunTargetOrDefault "Default"
