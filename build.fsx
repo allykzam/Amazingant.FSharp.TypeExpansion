@@ -105,7 +105,8 @@ Target "CopyBinaries" (fun _ ->
     |> Seq.iter
         (fun x ->
             let outDir = "bin" @@ (FileInfo(x).Directory.Name)
-            let sourceDir = Path.Combine(FileInfo(x).DirectoryName, "bin", buildConfig)
+            let baseDir = Path.Combine(FileInfo(x).DirectoryName, "bin", buildConfig)
+            let sourceDir = System.IO.Directory.EnumerateDirectories(baseDir) |> Seq.head
             printfn "Copying '%s' to '%s'" sourceDir outDir
             CopyDir outDir sourceDir (fun _ -> true)
         )
@@ -132,22 +133,17 @@ Target "Build" (fun _ ->
 
 
 Target "Package" (fun _ ->
-    !! "Source/**/*.??proj"
-    |> Seq.iter
-        (fun x ->
-            let proj = (FileInfo(x).Directory.Name)
-            // Delete the .nupkg file if it already exists
-            let nupkgFile = "bin" @@ (proj + "." + release.NugetVersion + ".nupkg")
-            if File.Exists nupkgFile then File.Delete nupkgFile
+    // Delete the .nupkg file if it already exists
+    let nupkgFile = "bin" @@ (GitHubRepo + "." + release.NugetVersion + ".nupkg")
+    if File.Exists nupkgFile then File.Delete nupkgFile
 
-            Paket.Pack (fun p ->
-                { p with
-                    OutputPath = "bin";
-                    Version = release.NugetVersion;
-                    ReleaseNotes = release.Notes |> toLines;
-                    BuildConfig = buildConfig;
-                })
-        )
+    Paket.Pack (fun p ->
+        { p with
+            OutputPath = "bin";
+            Version = release.NugetVersion;
+            ReleaseNotes = release.Notes |> toLines;
+            BuildConfig = buildConfig;
+        })
 )
 
 
