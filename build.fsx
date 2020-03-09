@@ -1,5 +1,5 @@
-#r "packages/FAKE/tools/FakeLib.dll"
-#load "packages/SourceLink.Fake/tools/Fake.fsx"
+#r "packages/build/FAKE/tools/FakeLib.dll"
+#load "packages/build/SourceLink.Fake/tools/Fake.fsx"
 
 open Fake
 open Fake.Git
