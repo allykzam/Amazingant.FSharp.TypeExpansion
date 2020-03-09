@@ -11,4 +11,6 @@ if errorlevel 1 (
   exit /b %errorlevel%
 )
 
+dotnet restore
+
 packages\build\FAKE\tools\FAKE.exe build.fsx %*
