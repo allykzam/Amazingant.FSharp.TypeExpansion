@@ -9,3 +9,9 @@ files
     ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/net47
     ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/net47
     ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/net47
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.dll ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.pdb ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.xml ==> lib/netstandard2.0
