@@ -6,6 +6,12 @@ projectUrl
 licenseUrl
     https://github.com/amazingant/Amazingant.FSharp.TypeExpansion/blob/master/LICENSE
 files
-    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/net45
-    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/net45
-    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/net45
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/net47
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/net47
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/net47
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.dll ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.pdb ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion.Attributes/Amazingant.FSharp.TypeExpansion.Attributes.xml ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.dll ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.pdb ==> lib/netstandard2.0
+    ../../bin/Amazingant.FSharp.TypeExpansion/Amazingant.FSharp.TypeExpansion.xml ==> lib/netstandard2.0

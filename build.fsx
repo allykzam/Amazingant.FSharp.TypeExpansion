@@ -1,5 +1,4 @@
-#r "packages/FAKE/tools/FakeLib.dll"
-#load "packages/SourceLink.Fake/tools/Fake.fsx"
+#r "packages/build/FAKE/tools/FakeLib.dll"
 
 open Fake
 open Fake.Git
@@ -7,7 +6,6 @@ open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
 open System
 open System.IO
-open SourceLink
 
 
 
@@ -19,6 +17,23 @@ let ReleaseNotesFile = "RELEASE_NOTES.md"
 let GitHubUser = "amazingant"
 let GitHubRepo = "Amazingant.FSharp.TypeExpansion"
 
+
+
+do
+    // Try to find Visual Studio 2019 in this location for one of the different
+    // editions, and set FAKE to use that version's MSBuild.
+    let f = sprintf @"C:\Program Files (x86)\Microsoft Visual Studio\2019\%s\MSBuild\Current\Bin"
+    [
+        f "Community";
+        f "Professional";
+        f "Enterprise";
+    ]
+    |> Seq.filter System.IO.Directory.Exists
+    |> Seq.take 1
+    |> Seq.iter
+        (fun x ->
+            setBuildParam "MSBuild" x
+        )
 
 
 
@@ -90,7 +105,8 @@ Target "CopyBinaries" (fun _ ->
     |> Seq.iter
         (fun x ->
             let outDir = "bin" @@ (FileInfo(x).Directory.Name)
-            let sourceDir = Path.Combine(FileInfo(x).DirectoryName, "bin", buildConfig)
+            let baseDir = Path.Combine(FileInfo(x).DirectoryName, "bin", buildConfig)
+            let sourceDir = System.IO.Directory.EnumerateDirectories(baseDir) |> Seq.head
             printfn "Copying '%s' to '%s'" sourceDir outDir
             CopyDir outDir sourceDir (fun _ -> true)
         )
@@ -116,38 +132,18 @@ Target "Build" (fun _ ->
 )
 
 
-Target "SourceLink" (fun _ ->
-    if Pdbstr.tryFind().IsNone then invalidOp "pdbstr.exe could not be found on the local system"
-    let url =
-        sprintf "https://raw.githubusercontent.com/%s/%s/{0}/%%var2%%"
-            GitHubUser
-            GitHubRepo
-    !! "Source/**/*.??proj"
-    |> Seq.iter
-        (fun x ->
-            let project = SourceLink.VsBuild.VsProj.Load x [("Configuration", buildConfig)]
-            SourceLink.Index project.CompilesNotLinked project.OutputFilePdb __SOURCE_DIRECTORY__ url
-        )
-)
-
-
 Target "Package" (fun _ ->
-    !! "Source/**/*.??proj"
-    |> Seq.iter
-        (fun x ->
-            let proj = (FileInfo(x).Directory.Name)
-            // Delete the .nupkg file if it already exists
-            let nupkgFile = "bin" @@ (proj + "." + release.NugetVersion + ".nupkg")
-            if File.Exists nupkgFile then File.Delete nupkgFile
+    // Delete the .nupkg file if it already exists
+    let nupkgFile = "bin" @@ (GitHubRepo + "." + release.NugetVersion + ".nupkg")
+    if File.Exists nupkgFile then File.Delete nupkgFile
 
-            Paket.Pack (fun p ->
-                { p with
-                    OutputPath = "bin";
-                    Version = release.NugetVersion;
-                    ReleaseNotes = release.Notes |> toLines;
-                    BuildConfig = buildConfig;
-                })
-        )
+    Paket.Pack (fun p ->
+        { p with
+            OutputPath = "bin";
+            Version = release.NugetVersion;
+            ReleaseNotes = release.Notes |> toLines;
+            BuildConfig = buildConfig;
+        })
 )
 
 
@@ -176,13 +172,8 @@ Target "Release" DoNothing
     ==> "Release"
 
 
-// This all copied verbatim from another project that has good reason to arrange
-// them this way?
-"CommitAndTag" ==> "SourceLink"
-"SourceLink" ==> "Release"
-"SourceLink" ?=> "Package"
+"CommitAndTag" ==> "Release"
 "CopyBinaries" ==> "Package"
-"SourceLink" ?=> "CopyBinaries"
 
 
 RunTargetOrDefault "Default"

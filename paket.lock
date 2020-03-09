@@ -1,8 +1,10 @@
-FRAMEWORK: NET45
+RESTRICTION: || (== net47) (== netstandard2.0)
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    FSharp.Core (4.7)
+
+GROUP Build
+RESTRICTION: == net47
 NUGET
   remote: https://api.nuget.org/v3/index.json
     FAKE (4.38.1)
-    FSharp.Core (4.1)
-      System.ValueTuple (>= 4.3)
-    SourceLink.Fake (1.1)
-    System.ValueTuple (4.3)
