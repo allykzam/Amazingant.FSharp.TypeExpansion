@@ -5,11 +5,11 @@ open System.Reflection
 [<assembly: AssemblyProductAttribute("Amazingant.FSharp.TypeExpansion.Attributes")>]
 [<assembly: AssemblyDescriptionAttribute("Code generation tool that applies expansion functions to simple types")>]
 [<assembly: AssemblyCopyrightAttribute("Copyright © 2016-2020 amazingant (Anthony Perez)")>]
-[<assembly: AssemblyVersionAttribute("2.0.0")>]
-[<assembly: AssemblyFileVersionAttribute("2.0.0")>]
-[<assembly: AssemblyInformationalVersionAttribute("2.0.0")>]
+[<assembly: AssemblyVersionAttribute("2.1.0")>]
+[<assembly: AssemblyFileVersionAttribute("2.1.0")>]
+[<assembly: AssemblyInformationalVersionAttribute("2.1.0")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] Version = "2.0.0"
-    let [<Literal>] InformationalVersion = "2.0.0"
+    let [<Literal>] Version = "2.1.0"
+    let [<Literal>] InformationalVersion = "2.1.0"
