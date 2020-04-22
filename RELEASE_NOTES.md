@@ -1,3 +1,8 @@
+#### 2.1.0 - 2020-04-22
+* Add support for loading FSharp.Core from nested package directories that
+  target .NET Framework 4.5 or .NET Standard 2.0, in order to support being used
+  in a project that uses recent versions of FSharp.Core.
+
 #### 2.0.0 - 2020-03-09
 * #21: Update the Attributes project to target .NET Standard 2.0, and update the
   type provider to target .NET Framework 4.7. These changes enable use of the
