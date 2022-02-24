@@ -159,7 +159,9 @@ type ExpansionProvider (tpConfig : TypeProviderConfig) =
         let providedCode = Path.ChangeExtension(Path.GetTempFileName(), ".dummy.fs")
         File.WriteAllText(providedCode, sprintf "namespace %s\ntype %s() =\n    member __.Dummy = true" ns ty)
         let providedPath = Path.ChangeExtension(providedCode, ".dummy.dll")
-        let args = [| "--noframework"; "--nocopyfsharpcore"; "--target:library"; "-r"; "netstandard"; (sprintf "-o:%s" providedPath); providedCode |]
+        let args = [ "--noframework"; "--nocopyfsharpcore"; "--target:library"; "-r"; "netstandard"; (sprintf "-o:%s" providedPath); providedCode ]
+        let refs = Compilation.buildRefs Compilation.requiredRefs
+        let args = args @ refs
         runFsc args config.CompilerTimeout config.WorkingDir
         if File.NotExists providedPath then
             failwithf "Could not compile dummy library for type provider"
