@@ -1,3 +1,9 @@
+#### 2.2.0 - 2022-02-24
+* Use the Visual Studio 2022 version of the F# compiler internally during code
+  generation, when it can be found.
+* Add additional path(s) where the Visual Studio 2019 version of the F# compiler
+  can be found.
+
 #### 2.1.0 - 2020-04-22
 * Add support for loading FSharp.Core from nested package directories that
   target .NET Framework 4.5 or .NET Standard 2.0, in order to support being used
