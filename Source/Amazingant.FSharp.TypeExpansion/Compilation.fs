@@ -128,6 +128,14 @@ module internal Compilation =
             [
                 // Normal Windows locations; subject to change as different
                 // versions show up
+                @"c:\program files\microsoft visual studio\2022\community\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
+                @"c:\program files\microsoft visual studio\2022\professional\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
+                @"c:\program files\microsoft visual studio\2022\enterprise\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
+                // At some point during the VS 2019 lifecycle, the path to
+                // fsc.exe changed. Both paths are provided here.
+                @"c:\program files (x86)\microsoft visual studio\2019\community\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
+                @"c:\program files (x86)\microsoft visual studio\2019\professional\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
+                @"c:\program files (x86)\microsoft visual studio\2019\enterprise\common7\ide\commonextensions\microsoft\fsharp\tools\fsc.exe"
                 @"c:\program files (x86)\microsoft visual studio\2019\community\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
                 @"c:\program files (x86)\microsoft visual studio\2019\professional\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
                 @"c:\program files (x86)\microsoft visual studio\2019\enterprise\common7\ide\commonextensions\microsoft\fsharp\fsc.exe"
@@ -142,7 +150,7 @@ module internal Compilation =
         |> Seq.filter File.Exists
         |> Seq.tryHead
         |> function
-           | None -> failwithf "Cannot find F# 4.1 compiler"
+           | None -> failwithf "Cannot find the F# compiler"
            | Some x -> x
     let runFsc (args : string seq) (timeout : int) (workingDir : string) =
         let exePath, fscArg =
