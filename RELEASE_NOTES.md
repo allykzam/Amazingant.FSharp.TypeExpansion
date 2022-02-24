@@ -1,3 +1,9 @@
+#### 2.2.1 - 2022-02-24
+* Adjust temporary assembly generation to use the copy of FSharp.Core that is in
+  your project, rather than the one that the F# compiler chooses. This should
+  ensure that projects can still be built in Visual Studio 2019 on systems where
+  the F# compiler from Visual Studio 2022 is used.
+
 #### 2.2.0 - 2022-02-24
 * Use the Visual Studio 2022 version of the F# compiler internally during code
   generation, when it can be found.
