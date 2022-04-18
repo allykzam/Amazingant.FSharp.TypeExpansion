@@ -90,6 +90,8 @@ module internal Compilation =
         let p = Path.GetDirectoryName
         let paths =
             [
+                // Look to see where the compiler is getting FSharp.Core from.
+                typeof<Option<int>>.GetGenericTypeDefinition().Assembly.Location;
                 // Easy-to-grab locations for Visual Studio 2022 and 2019.
                 "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/FSharp/FSharp.Core.dll";
                 "C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/IDE/CommonExtensions/Microsoft/FSharp/FSharp.Core.dll";
