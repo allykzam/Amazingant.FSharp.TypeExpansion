@@ -90,6 +90,9 @@ module internal Compilation =
         let p = Path.GetDirectoryName
         let paths =
             [
+                // Easy-to-grab locations for Visual Studio 2022 and 2019.
+                "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/FSharp/FSharp.Core.dll";
+                "C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/Common7/IDE/CommonExtensions/Microsoft/FSharp/FSharp.Core.dll";
                 // This backs out from the bin/Debug directory for this type
                 // provider, in case it is being used from there
                 Path.Combine((typeof<CompileSource>.Assembly.Location |> p |> p |> p |> p |> p), "packages", "FSharp.Core", "lib", "net40", "FSharp.Core.dll");
