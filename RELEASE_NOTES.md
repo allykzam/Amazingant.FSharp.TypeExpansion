@@ -1,3 +1,8 @@
+#### 2.3.0 - 2022-04-18
+* Adjust FSharp.Core location detection to check where the current compilation
+  environment is getting FSharp.Core from, and additionally add in some paths
+  where Visual Studio 2022 and 2019 install copies of FSharp.Core.
+
 #### 2.2.1 - 2022-02-24
 * Adjust temporary assembly generation to use the copy of FSharp.Core that is in
   your project, rather than the one that the F# compiler chooses. This should
